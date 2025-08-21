@@ -96,6 +96,25 @@ Use natural language queries prefixed with "ai:":
 - "ai:websites about machine learning"
 - "ai:job boards for developers"
 
+#### Secure Gemini integration (server-side)
+- The app now calls a serverless API route at `POST /api/ai-search` to run Gemini securely with a server-side key.
+- Configure environment variables:
+  - Local dev (`.env`):
+    ```env
+    VITE_SUPABASE_URL=your_supabase_project_url
+    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+    # Optional client fallback (exposes key in frontend):
+    VITE_GEMINI_API_KEY=
+    ```
+  - Vercel (Project → Settings → Environment Variables):
+    - `VITE_SUPABASE_URL`
+    - `VITE_SUPABASE_ANON_KEY`
+    - `GEMINI_API_KEY` (server-side only, required for AI search)
+
+Behavior:
+- When you search with `ai:...`, the client calls `/api/ai-search`.
+- If the API route fails, the client will try a client-side fallback if `VITE_GEMINI_API_KEY` is set; otherwise it falls back to normal text search.
+
 ## Project Structure
 
 ```
