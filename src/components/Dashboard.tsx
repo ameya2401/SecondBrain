@@ -30,6 +30,24 @@ const Dashboard: React.FC = () => {
   }, [user]);
 
   useEffect(() => {
+    if (!user) return;
+    const channel = (supabase as any).channel('websites-realtime')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'websites',
+        filter: `user_id=eq.${user.id}`,
+      }, () => {
+        fetchWebsites();
+      })
+      .subscribe();
+
+    return () => {
+      try { (supabase as any).removeChannel(channel); } catch {}
+    };
+  }, [user]);
+
+  useEffect(() => {
     filterWebsites();
   }, [websites, selectedCategory, searchQuery]);
 
@@ -154,9 +172,9 @@ const Dashboard: React.FC = () => {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
               <div className="bg-blue-600 w-8 h-8 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">ST</span>
+                <span className="text-white font-bold text-sm">SB</span>
               </div>
-              <h1 className="text-xl font-bold text-gray-900">Smart Tab Saver</h1>
+              <h1 className="text-xl font-bold text-gray-900">SecondBrain</h1>
             </div>
             
             <div className="flex items-center gap-3">
@@ -274,6 +292,13 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Footer */}
+      <footer className="border-t border-gray-200 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center text-sm text-gray-600">
+          made with ❤ by Ameya Bhagat
+        </div>
+      </footer>
 
       {/* Add Website Modal */}
       <AddWebsiteModal

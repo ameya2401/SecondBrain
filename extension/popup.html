@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Smart Tab Saver</title>
+  <title>SecondBrain</title>
   <style>
     * {
       margin: 0;
@@ -106,7 +107,9 @@
       margin-bottom: 4px;
     }
 
-    input, textarea, select {
+    input,
+    textarea,
+    select {
       width: 100%;
       padding: 8px 12px;
       border: 1px solid #d1d5db;
@@ -115,7 +118,9 @@
       transition: border-color 0.2s, box-shadow 0.2s;
     }
 
-    input:focus, textarea:focus, select:focus {
+    input:focus,
+    textarea:focus,
+    select:focus {
       outline: none;
       border-color: #3b82f6;
       box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
@@ -200,8 +205,13 @@
     }
 
     @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
     }
 
     .config-section {
@@ -225,10 +235,11 @@
     }
   </style>
 </head>
+
 <body>
   <div class="header">
-    <div class="logo">ST</div>
-    <div class="title">Smart Tab Saver</div>
+    <div class="logo">SB</div>
+    <div class="title">SecondBrain</div>
     <div class="subtitle">Save and organize your tabs</div>
   </div>
 
@@ -277,16 +288,17 @@
     <div class="config-section">
       <div class="config-title">Configuration Required</div>
       <div style="font-size: 12px; color: #6b7280; margin-bottom: 12px;">
-        Please set your dashboard URL to start saving tabs.
+        Please set your dashboard URL and your account email.
       </div>
-      
+
       <div class="form-group">
         <label for="dashboardUrl">Dashboard URL</label>
-        <input 
-          type="url" 
-          id="dashboardUrl" 
-          placeholder="https://your-dashboard.vercel.app"
-        >
+        <input type="url" id="dashboardUrl" placeholder="https://your-dashboard.vercel.app">
+      </div>
+
+      <div class="form-group">
+        <label for="userEmail">Account Email</label>
+        <input type="email" id="userEmail" placeholder="you@example.com">
       </div>
 
       <div class="button-group">
@@ -299,6 +311,11 @@
 
   <div id="status" class="status" style="display: none;"></div>
 
+  <div style="text-align:center; font-size:11px; color:#6b7280; margin-top:12px;">
+    made with ❤ by Ameya Bhagat
+  </div>
+
   <script src="popup.js"></script>
 </body>
+
 </html>

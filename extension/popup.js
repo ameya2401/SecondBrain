@@ -2,19 +2,21 @@
 let config = {
   dashboardUrl: null,
   supabaseUrl: null,
-  supabaseAnonKey: null
+  supabaseAnonKey: null,
+  userEmail: null
 };
 
 // Load configuration from storage
 async function loadConfig() {
-  const result = await chrome.storage.sync.get(['dashboardUrl', 'supabaseUrl', 'supabaseAnonKey']);
+  const result = await chrome.storage.sync.get(['dashboardUrl', 'supabaseUrl', 'supabaseAnonKey', 'userEmail']);
   config = {
     dashboardUrl: result.dashboardUrl || null,
     supabaseUrl: result.supabaseUrl || null,
-    supabaseAnonKey: result.supabaseAnonKey || null
+    supabaseAnonKey: result.supabaseAnonKey || null,
+    userEmail: result.userEmail || null
   };
   
-  return config.dashboardUrl && config.supabaseUrl && config.supabaseAnonKey;
+  return config.dashboardUrl && config.userEmail;
 }
 
 // Save configuration to storage
@@ -55,13 +57,12 @@ function showStatus(message, type = 'success') {
 // Save tab to database via API
 async function saveTabToDatabase(tabData) {
   try {
-    // Here we would make an API call to your web app's backend
-    // For now, we'll simulate the save and store locally
     const response = await fetch(`${config.dashboardUrl}/api/save-tab`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${config.supabaseAnonKey}`
+        // Optional: add shared secret header if configured on server
+        // 'x-extension-secret': '...'
       },
       body: JSON.stringify(tabData)
     });
@@ -129,6 +130,37 @@ async function initPopup() {
       category.value = 'Blogs';
     }
 
+    // If email and dashboard configured, fetch categories from dashboard API
+    if (config.dashboardUrl && config.userEmail) {
+      try {
+        const resp = await fetch(`${config.dashboardUrl}/api/categories?email=${encodeURIComponent(config.userEmail)}`);
+        if (resp.ok) {
+          const data = await resp.json();
+          const categories = Array.isArray(data.categories) ? data.categories : [];
+          const select = document.getElementById('category');
+          // Keep current value, repopulate options
+          const current = select.value;
+          select.innerHTML = '';
+          const defaultOption = document.createElement('option');
+          defaultOption.value = 'Uncategorized';
+          defaultOption.textContent = 'Uncategorized';
+          select.appendChild(defaultOption);
+          categories.forEach((c) => {
+            if (c && c !== 'Uncategorized') {
+              const opt = document.createElement('option');
+              opt.value = c;
+              opt.textContent = c;
+              select.appendChild(opt);
+            }
+          });
+          // Restore selection if present
+          if (categories.includes(current)) select.value = current;
+        }
+      } catch (e) {
+        // Ignore population errors silently
+      }
+    }
+
   } catch (error) {
     console.error('Failed to load tab info:', error);
     showStatus('Failed to load tab information', 'error');
@@ -140,9 +172,14 @@ document.addEventListener('DOMContentLoaded', initPopup);
 
 document.getElementById('saveConfig')?.addEventListener('click', async () => {
   const dashboardUrl = document.getElementById('dashboardUrl').value.trim();
+  const userEmail = document.getElementById('userEmail').value.trim();
   
   if (!dashboardUrl) {
     showStatus('Please enter a dashboard URL', 'error');
+    return;
+  }
+  if (!userEmail) {
+    showStatus('Please enter your account email', 'error');
     return;
   }
 
@@ -157,8 +194,7 @@ document.getElementById('saveConfig')?.addEventListener('click', async () => {
   // For demo purposes, we'll set default Supabase config
   // In production, these would be fetched from your dashboard or set during setup
   config.dashboardUrl = dashboardUrl;
-  config.supabaseUrl = 'https://your-project.supabase.co'; // Would be dynamic
-  config.supabaseAnonKey = 'your-anon-key'; // Would be dynamic
+  config.userEmail = userEmail;
   
   await saveConfig();
   showStatus('Configuration saved!', 'success');
@@ -197,7 +233,7 @@ document.getElementById('saveTab')?.addEventListener('click', async () => {
       created_at: new Date().toISOString()
     };
 
-    const result = await saveTabToDatabase(tabData);
+    const result = await saveTabToDatabase({ ...tabData, userEmail: config.userEmail });
     
     if (result.success) {
       // Show success state

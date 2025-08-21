@@ -37,7 +37,7 @@ const Auth: React.FC = () => {
           <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
             <LogIn className="h-8 w-8 text-blue-600" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Smart Tab Saver</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">SecondBrain</h1>
           <p className="text-gray-600">Organize your saved websites with AI-powered search</p>
         </div>
 

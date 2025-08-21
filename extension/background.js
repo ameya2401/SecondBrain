@@ -1,9 +1,9 @@
-// Background script for Smart Tab Saver extension
+// Background script for SecondBrain extension
 
 // Install/update listener
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
-    console.log('Smart Tab Saver extension installed');
+    console.log('SecondBrain extension installed');
     
     // Set default configuration
     chrome.storage.sync.set({
@@ -16,7 +16,7 @@ chrome.runtime.onInstalled.addListener((details) => {
     chrome.notifications.create({
       type: 'basic',
       iconUrl: 'icons/icon48.png',
-      title: 'Smart Tab Saver',
+      title: 'SecondBrain',
       message: 'Extension installed! Click the extension icon to get started.'
     });
   }
