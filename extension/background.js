@@ -4,14 +4,14 @@
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
     console.log('SecondBrain extension installed');
-    
+
     // Set default configuration
     chrome.storage.sync.set({
       dashboardUrl: '',
       supabaseUrl: '',
       supabaseAnonKey: ''
     });
-    
+
     // Open welcome page or show notification
     chrome.notifications.create({
       type: 'basic',
@@ -44,7 +44,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     console.log('Saving tab:', request.tabData);
     sendResponse({ success: true });
   }
-  
+
   if (request.action === 'getCurrentTab') {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       sendResponse({ tab: tabs[0] });
@@ -58,7 +58,7 @@ async function updateBadge() {
   try {
     const result = await chrome.storage.local.get(['savedTabsCount']);
     const count = result.savedTabsCount || 0;
-    
+
     if (count > 0) {
       chrome.action.setBadgeText({ text: count.toString() });
       chrome.action.setBadgeBackgroundColor({ color: '#3b82f6' });
@@ -74,8 +74,14 @@ async function updateBadge() {
 updateBadge();
 
 // Keyboard shortcut support
-chrome.commands.onCommand.addListener((command) => {
-  if (command === 'save-current-tab') {
-    chrome.action.openPopup();
+try {
+  if (chrome?.commands?.onCommand?.addListener) {
+    chrome.commands.onCommand.addListener((command) => {
+      if (command === 'save-current-tab') {
+        chrome.action.openPopup();
+      }
+    });
   }
-});
+} catch (e) {
+  // Silently ignore if commands API is unavailable
+}
