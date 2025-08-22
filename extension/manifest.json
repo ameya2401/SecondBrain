@@ -5,7 +5,8 @@
   "description": "Save and organize your browser tabs with AI-powered search",
   "permissions": [
     "activeTab",
-    "storage"
+    "storage",
+    "tabs"
   ],
   "host_permissions": [
     "http://*/*",

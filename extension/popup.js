@@ -123,7 +123,9 @@ async function initPopup() {
 
     const favicon = getFaviconUrl(tab.url);
     if (favicon) {
-      document.getElementById('tabFavicon').src = favicon;
+      const favEl = document.getElementById('tabFavicon');
+      favEl.addEventListener('error', () => { favEl.style.display = 'none'; }, { once: true });
+      favEl.src = favicon;
     }
 
     // Auto-categorize based on URL
