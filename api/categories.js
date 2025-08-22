@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
-export default async function handler(req: any, res: any) {
-  // CORS headers for extension calls
-  const origin = (req.headers?.origin as string) || '*';
+export default async function handler(req, res) {
+  // CORS
+  const origin = req.headers?.origin || '*';
   res.setHeader('Access-Control-Allow-Origin', origin);
   res.setHeader('Vary', 'Origin');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -29,8 +29,8 @@ export default async function handler(req: any, res: any) {
     const supabase = createClient(supabaseUrl, serviceKey);
 
     // Resolve userId from email if provided
-    let userId = req.query.userId as string | undefined;
-    const email = req.query.email as string | undefined;
+    let userId = req.query.userId;
+    const email = req.query.email;
     if (!userId && email) {
       const { data: userByEmail, error: adminErr } = await supabase.auth.admin.getUserByEmail(email);
       if (adminErr) {
@@ -55,9 +55,9 @@ export default async function handler(req: any, res: any) {
       return;
     }
 
-    const unique = Array.from(new Set((data || []).map((r: any) => r.category))).sort();
+    const unique = Array.from(new Set((data || []).map((r) => r.category))).sort();
     res.status(200).json({ categories: unique });
-  } catch (err: any) {
+  } catch (err) {
     console.error('categories error:', err);
     res.status(500).json({ error: 'Internal Server Error' });
   }

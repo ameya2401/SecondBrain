@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
-export default async function handler(req: any, res: any) {
-  // Basic CORS support for extension calls
-  const origin = (req.headers?.origin as string) || '*';
+export default async function handler(req, res) {
+  // CORS
+  const origin = req.headers?.origin || '*';
   res.setHeader('Access-Control-Allow-Origin', origin);
   res.setHeader('Vary', 'Origin');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -42,9 +42,9 @@ export default async function handler(req: any, res: any) {
     const supabase = createClient(supabaseUrl, serviceKey);
 
     // Resolve user id
-    let resolvedUserId = bodyUserId as string | undefined;
+    let resolvedUserId = bodyUserId;
     if (!resolvedUserId && userEmail) {
-      const { data: userByEmail, error: adminErr } = await (supabase as any).auth.admin.getUserByEmail(userEmail);
+      const { data: userByEmail, error: adminErr } = await supabase.auth.admin.getUserByEmail(userEmail);
       if (adminErr) {
         res.status(500).json({ error: adminErr.message });
         return;
@@ -73,7 +73,7 @@ export default async function handler(req: any, res: any) {
     }
 
     res.status(200).json({ success: true });
-  } catch (err: any) {
+  } catch (err) {
     console.error('save-tab error:', err);
     res.status(500).json({ error: 'Internal Server Error' });
   }
