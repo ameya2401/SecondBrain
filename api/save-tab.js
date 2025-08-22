@@ -26,16 +26,25 @@ export default async function handler(req, res) {
       return;
     }
 
-    const { userId: bodyUserId, userEmail, url, title, category, description, favicon, created_at } = req.body || {};
+    if (!req.body || typeof req.body !== 'object') {
+      res.status(400).json({ error: 'Missing JSON body' });
+      return;
+    }
+
+    const { userId: bodyUserId, userEmail, url, title, category, description, favicon, created_at } = req.body;
     if (!url || !title || !category) {
-      res.status(400).json({ error: 'Missing required fields' });
+      res.status(400).json({ error: 'Missing required fields (url, title, category)' });
       return;
     }
 
     const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-    if (!supabaseUrl || !serviceKey) {
-      res.status(500).json({ error: 'Supabase server credentials not configured' });
+    if (!supabaseUrl) {
+      res.status(500).json({ error: 'SUPABASE_URL not configured on server' });
+      return;
+    }
+    if (!serviceKey) {
+      res.status(500).json({ error: 'SUPABASE_SERVICE_ROLE_KEY not configured on server' });
       return;
     }
 
@@ -44,16 +53,21 @@ export default async function handler(req, res) {
     // Resolve user id
     let resolvedUserId = bodyUserId;
     if (!resolvedUserId && userEmail) {
-      const { data: userByEmail, error: adminErr } = await supabase.auth.admin.getUserByEmail(userEmail);
-      if (adminErr) {
-        res.status(500).json({ error: adminErr.message });
+      try {
+        const { data: userByEmail, error: adminErr } = await supabase.auth.admin.getUserByEmail(userEmail);
+        if (adminErr) {
+          res.status(500).json({ error: `Supabase admin getUserByEmail failed: ${adminErr.message}` });
+          return;
+        }
+        resolvedUserId = userByEmail?.user?.id;
+      } catch (e) {
+        res.status(500).json({ error: `Supabase admin error: ${e?.message || e}` });
         return;
       }
-      resolvedUserId = userByEmail?.user?.id;
     }
 
     if (!resolvedUserId) {
-      res.status(400).json({ error: 'Missing userId or userEmail' });
+      res.status(400).json({ error: 'Missing userId or user not found for userEmail' });
       return;
     }
 
@@ -68,14 +82,14 @@ export default async function handler(req, res) {
     });
 
     if (error) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: `Supabase insert failed: ${error.message}` });
       return;
     }
 
     res.status(200).json({ success: true });
   } catch (err) {
     console.error('save-tab error:', err);
-    res.status(500).json({ error: 'Internal Server Error' });
+    res.status(500).json({ error: err?.message || 'Internal Server Error' });
   }
 }
 
