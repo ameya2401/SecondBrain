@@ -1,6 +1,18 @@
 import { createClient } from '@supabase/supabase-js';
 
 export default async function handler(req: any, res: any) {
+  // Basic CORS support for extension calls
+  const origin = (req.headers?.origin as string) || '*';
+  res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Vary', 'Origin');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-extension-secret');
+
+  if (req.method === 'OPTIONS') {
+    res.status(204).end();
+    return;
+  }
+
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method Not Allowed' });
     return;
@@ -32,17 +44,12 @@ export default async function handler(req: any, res: any) {
     // Resolve user id
     let resolvedUserId = bodyUserId as string | undefined;
     if (!resolvedUserId && userEmail) {
-      const { data: users, error: adminErr } = await (supabase as any).auth.admin.listUsers({
-        page: 1,
-        perPage: 1,
-        email: userEmail,
-      });
+      const { data: userByEmail, error: adminErr } = await (supabase as any).auth.admin.getUserByEmail(userEmail);
       if (adminErr) {
         res.status(500).json({ error: adminErr.message });
         return;
       }
-      const user = users?.users?.[0];
-      resolvedUserId = user?.id;
+      resolvedUserId = userByEmail?.user?.id;
     }
 
     if (!resolvedUserId) {
