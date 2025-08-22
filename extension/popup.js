@@ -3,19 +3,21 @@ let config = {
   dashboardUrl: null,
   supabaseUrl: null,
   supabaseAnonKey: null,
-  userEmail: null
+  userEmail: null,
+  extensionSecret: null
 };
 
 // Load configuration from storage
 async function loadConfig() {
-  const result = await chrome.storage.sync.get(['dashboardUrl', 'supabaseUrl', 'supabaseAnonKey', 'userEmail']);
+  const result = await chrome.storage.sync.get(['dashboardUrl', 'supabaseUrl', 'supabaseAnonKey', 'userEmail', 'extensionSecret']);
   config = {
     dashboardUrl: result.dashboardUrl || null,
     supabaseUrl: result.supabaseUrl || null,
     supabaseAnonKey: result.supabaseAnonKey || null,
-    userEmail: result.userEmail || null
+    userEmail: result.userEmail || null,
+    extensionSecret: result.extensionSecret || null
   };
-  
+
   return config.dashboardUrl && config.userEmail;
 }
 
@@ -46,7 +48,7 @@ function showStatus(message, type = 'success') {
   statusEl.textContent = message;
   statusEl.className = `status ${type}`;
   statusEl.style.display = 'block';
-  
+
   if (type === 'success') {
     setTimeout(() => {
       statusEl.style.display = 'none';
@@ -61,26 +63,28 @@ async function saveTabToDatabase(tabData) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        // Optional: add shared secret header if configured on server
-        // 'x-extension-secret': '...'
+        // Optional: shared secret header if configured on server
+        ...(config.extensionSecret ? { 'x-extension-secret': config.extensionSecret } : {})
       },
       body: JSON.stringify(tabData)
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      let details = '';
+      try { details = await response.text(); } catch { }
+      throw new Error(`HTTP ${response.status}: ${details || 'Non-OK response'}`);
     }
 
     const result = await response.json();
     return { success: true, data: result };
   } catch (error) {
     console.error('Failed to save tab:', error);
-    
+
     // Fallback: Save to local storage
     const savedTabs = JSON.parse(localStorage.getItem('savedTabs') || '[]');
     savedTabs.unshift({ ...tabData, id: Date.now().toString() });
     localStorage.setItem('savedTabs', JSON.stringify(savedTabs.slice(0, 1000))); // Keep last 1000
-    
+
     return { success: true, fallback: true };
   }
 }
@@ -88,27 +92,35 @@ async function saveTabToDatabase(tabData) {
 // Initialize popup
 async function initPopup() {
   const isConfigured = await loadConfig();
-  
+
   if (!isConfigured) {
     document.getElementById('saveSection').style.display = 'none';
     document.getElementById('configSection').style.display = 'block';
-    
+
     // Load saved dashboard URL if exists
     const dashboardUrl = document.getElementById('dashboardUrl');
+    const userEmail = document.getElementById('userEmail');
+    const extensionSecret = document.getElementById('extensionSecret');
     if (config.dashboardUrl) {
       dashboardUrl.value = config.dashboardUrl;
     }
-    
+    if (config.userEmail) {
+      userEmail.value = config.userEmail;
+    }
+    if (extensionSecret && config.extensionSecret) {
+      extensionSecret.value = config.extensionSecret;
+    }
+
     return;
   }
 
   // Load current tab information
   try {
     const tab = await getCurrentTab();
-    
+
     document.getElementById('tabTitle').textContent = tab.title || 'Untitled';
     document.getElementById('tabUrl').textContent = tab.url;
-    
+
     const favicon = getFaviconUrl(tab.url);
     if (favicon) {
       document.getElementById('tabFavicon').src = favicon;
@@ -117,7 +129,7 @@ async function initPopup() {
     // Auto-categorize based on URL
     const category = document.getElementById('category');
     const url = tab.url.toLowerCase();
-    
+
     if (url.includes('youtube.com')) {
       category.value = 'YouTube';
     } else if (url.includes('linkedin.com') || url.includes('indeed.com') || url.includes('glassdoor.com')) {
@@ -173,7 +185,8 @@ document.addEventListener('DOMContentLoaded', initPopup);
 document.getElementById('saveConfig')?.addEventListener('click', async () => {
   const dashboardUrl = document.getElementById('dashboardUrl').value.trim();
   const userEmail = document.getElementById('userEmail').value.trim();
-  
+  const extensionSecret = (document.getElementById('extensionSecret')?.value || '').trim();
+
   if (!dashboardUrl) {
     showStatus('Please enter a dashboard URL', 'error');
     return;
@@ -195,10 +208,11 @@ document.getElementById('saveConfig')?.addEventListener('click', async () => {
   // In production, these would be fetched from your dashboard or set during setup
   config.dashboardUrl = dashboardUrl;
   config.userEmail = userEmail;
-  
+  config.extensionSecret = extensionSecret || null;
+
   await saveConfig();
   showStatus('Configuration saved!', 'success');
-  
+
   // Reload popup to show save section
   setTimeout(() => {
     window.location.reload();
@@ -214,7 +228,7 @@ document.getElementById('openDashboard')?.addEventListener('click', () => {
 document.getElementById('saveTab')?.addEventListener('click', async () => {
   const saveBtn = document.getElementById('saveTab');
   const originalText = saveBtn.innerHTML;
-  
+
   try {
     // Show loading state
     saveBtn.disabled = true;
@@ -234,21 +248,21 @@ document.getElementById('saveTab')?.addEventListener('click', async () => {
     };
 
     const result = await saveTabToDatabase({ ...tabData, userEmail: config.userEmail });
-    
+
     if (result.success) {
       // Show success state
       saveBtn.innerHTML = '<span class="saved-icon">✓</span> Saved!';
       saveBtn.style.background = '#10b981';
-      
+
       if (result.fallback) {
         showStatus('Tab saved locally (dashboard offline)', 'success');
       } else {
         showStatus('Tab saved successfully!', 'success');
       }
-      
+
       // Reset form
       document.getElementById('description').value = '';
-      
+
       // Reset button after delay
       setTimeout(() => {
         saveBtn.disabled = false;
