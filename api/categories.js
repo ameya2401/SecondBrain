@@ -32,12 +32,17 @@ export default async function handler(req, res) {
     let userId = req.query.userId;
     const email = req.query.email;
     if (!userId && email) {
-      const { data: userByEmail, error: adminErr } = await supabase.auth.admin.getUserByEmail(email);
-      if (adminErr) {
-        res.status(500).json({ error: adminErr.message });
+      const { data, error } = await supabase
+        .from('auth.users')
+        .select('id')
+        .eq('email', String(email))
+        .limit(1)
+        .maybeSingle();
+      if (error) {
+        res.status(500).json({ error: `User lookup failed: ${error.message}` });
         return;
       }
-      userId = userByEmail?.user?.id;
+      userId = data?.id;
     }
 
     if (!userId) {

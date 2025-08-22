@@ -52,14 +52,19 @@ export default async function handler(req, res) {
       return;
     }
     try {
-      const { data: userByEmail, error: adminErr } = await supabase.auth.admin.getUserByEmail(String(email));
-      if (adminErr) {
-        respondHtml(res, 500, `User lookup failed: ${adminErr.message}`);
+      const { data, error } = await supabase
+        .from('auth.users')
+        .select('id')
+        .eq('email', String(email))
+        .limit(1)
+        .maybeSingle();
+      if (error) {
+        respondHtml(res, 500, `User lookup failed: ${error.message}`);
         return;
       }
-      resolvedUserId = userByEmail?.user?.id;
+      resolvedUserId = data?.id;
     } catch (e) {
-      respondHtml(res, 500, `Supabase admin error: ${e?.message || e}`);
+      respondHtml(res, 500, `User lookup exception: ${e?.message || e}`);
       return;
     }
 

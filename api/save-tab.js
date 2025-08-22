@@ -54,14 +54,19 @@ export default async function handler(req, res) {
     let resolvedUserId = bodyUserId;
     if (!resolvedUserId && userEmail) {
       try {
-        const { data: userByEmail, error: adminErr } = await supabase.auth.admin.getUserByEmail(userEmail);
-        if (adminErr) {
-          res.status(500).json({ error: `Supabase admin getUserByEmail failed: ${adminErr.message}` });
+        const { data, error } = await supabase
+          .from('auth.users')
+          .select('id')
+          .eq('email', userEmail)
+          .limit(1)
+          .maybeSingle();
+        if (error) {
+          res.status(500).json({ error: `User lookup failed: ${error.message}` });
           return;
         }
-        resolvedUserId = userByEmail?.user?.id;
+        resolvedUserId = data?.id;
       } catch (e) {
-        res.status(500).json({ error: `Supabase admin error: ${e?.message || e}` });
+        res.status(500).json({ error: `User lookup exception: ${e?.message || e}` });
         return;
       }
     }
