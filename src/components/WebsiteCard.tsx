@@ -7,14 +7,24 @@ interface WebsiteCardProps {
   website: Website;
   viewMode: 'grid' | 'list';
   onDelete: (id: string) => void;
+  onView: (website: Website) => void;
 }
 
-const WebsiteCard: React.FC<WebsiteCardProps> = ({ website, viewMode, onDelete }) => {
+const WebsiteCard: React.FC<WebsiteCardProps> = ({ website, viewMode, onDelete, onView }) => {
   const handleDelete = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     if (confirm('Are you sure you want to delete this website?')) {
       onDelete(website.id);
     }
+  };
+
+  const handleView = () => {
+    onView(website);
+  };
+
+  const handleLinkClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
   };
 
   const getFaviconUrl = (url: string) => {
@@ -28,7 +38,10 @@ const WebsiteCard: React.FC<WebsiteCardProps> = ({ website, viewMode, onDelete }
 
   if (viewMode === 'list') {
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow p-4">
+      <div 
+        className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow p-4 cursor-pointer"
+        onClick={handleView}
+      >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4 flex-1 min-w-0">
             <div className="flex-shrink-0">
@@ -72,6 +85,7 @@ const WebsiteCard: React.FC<WebsiteCardProps> = ({ website, viewMode, onDelete }
               href={website.url}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={handleLinkClick}
               className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
             >
               <ExternalLink className="h-4 w-4" />
@@ -89,7 +103,10 @@ const WebsiteCard: React.FC<WebsiteCardProps> = ({ website, viewMode, onDelete }
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 overflow-hidden group">
+    <div 
+      className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 overflow-hidden group cursor-pointer"
+      onClick={handleView}
+    >
       <div className="p-6">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
@@ -118,6 +135,7 @@ const WebsiteCard: React.FC<WebsiteCardProps> = ({ website, viewMode, onDelete }
               href={website.url}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={handleLinkClick}
               className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
             >
               <ExternalLink className="h-4 w-4" />

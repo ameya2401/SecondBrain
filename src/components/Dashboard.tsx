@@ -7,6 +7,7 @@ import WebsiteCard from './WebsiteCard';
 import SearchBar from './SearchBar';
 import CategorySidebar from './CategorySidebar';
 import AddWebsiteModal from './AddWebsiteModal';
+import WebsiteDetailsModal from './WebsiteDetailsModal';
 import { LogOut, Plus, Grid, List } from 'lucide-react';
 import { signOut } from '../lib/supabase';
 import toast from 'react-hot-toast';
@@ -21,6 +22,7 @@ const Dashboard: React.FC = () => {
   const [isSearchingAI, setIsSearchingAI] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [selectedWebsite, setSelectedWebsite] = useState<Website | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -145,6 +147,14 @@ const Dashboard: React.FC = () => {
       toast.error('Failed to delete website');
       console.error('Error:', error);
     }
+  };
+
+  const handleViewWebsite = (website: Website) => {
+    setSelectedWebsite(website);
+  };
+
+  const handleCloseDetailsModal = () => {
+    setSelectedWebsite(null);
   };
 
   const handleSignOut = async () => {
@@ -285,6 +295,7 @@ const Dashboard: React.FC = () => {
                     website={website}
                     viewMode={viewMode}
                     onDelete={handleDeleteWebsite}
+                    onView={handleViewWebsite}
                   />
                 ))}
               </div>
@@ -307,6 +318,17 @@ const Dashboard: React.FC = () => {
         onSuccess={fetchWebsites}
         categories={categories.map(c => c.name)}
       />
+
+      {/* Website Details Modal */}
+      {selectedWebsite && (
+        <WebsiteDetailsModal
+          website={selectedWebsite}
+          isOpen={!!selectedWebsite}
+          onClose={handleCloseDetailsModal}
+          onUpdate={fetchWebsites}
+          categories={categories.map(c => c.name)}
+        />
+      )}
     </div>
   );
 };
