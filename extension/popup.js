@@ -1,19 +1,15 @@
 // Configuration and state management
 let config = {
   dashboardUrl: null,
-  supabaseUrl: null,
-  supabaseAnonKey: null,
   userEmail: null,
   extensionSecret: null
 };
 
 // Load configuration from storage
 async function loadConfig() {
-  const result = await chrome.storage.sync.get(['dashboardUrl', 'supabaseUrl', 'supabaseAnonKey', 'userEmail', 'extensionSecret']);
+  const result = await chrome.storage.sync.get(['dashboardUrl', 'userEmail', 'extensionSecret']);
   config = {
     dashboardUrl: result.dashboardUrl || null,
-    supabaseUrl: result.supabaseUrl || null,
-    supabaseAnonKey: result.supabaseAnonKey || null,
     userEmail: result.userEmail || null,
     extensionSecret: result.extensionSecret || null
   };
@@ -56,6 +52,88 @@ function showStatus(message, type = 'success') {
   }
 }
 
+// Auto-categorize based on URL
+function autoCategorize(url) {
+  const urlLower = url.toLowerCase();
+  
+  if (urlLower.includes('youtube.com')) {
+    return 'YouTube';
+  } else if (urlLower.includes('linkedin.com') || urlLower.includes('indeed.com') || urlLower.includes('glassdoor.com')) {
+    return 'Job Portals';
+  } else if (urlLower.includes('openai.com') || urlLower.includes('anthropic.com') || urlLower.includes('huggingface.co') || urlLower.includes('gemini.google.com')) {
+    return 'AI Tools';
+  } else if (urlLower.includes('github.com') || urlLower.includes('stackoverflow.com') || urlLower.includes('dev.to')) {
+    return 'Development';
+  } else if (urlLower.includes('medium.com') || urlLower.includes('blog') || urlLower.includes('news')) {
+    return 'Blogs';
+  }
+  
+  return 'Uncategorized';
+}
+
+// Fetch categories from API
+async function fetchCategories() {
+  if (!config.dashboardUrl || !config.userEmail) return [];
+  
+  try {
+    const response = await fetch(`${config.dashboardUrl}/api/categories?email=${encodeURIComponent(config.userEmail)}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(config.extensionSecret ? { 'x-extension-secret': config.extensionSecret } : {})
+      }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      return Array.isArray(data.categories) ? data.categories : [];
+    }
+  } catch (error) {
+    console.error('Failed to fetch categories:', error);
+  }
+  
+  return [];
+}
+
+// Populate category dropdown
+async function populateCategories(currentTab) {
+  const categorySelect = document.getElementById('category');
+  const autoCategory = autoCategorize(currentTab.url);
+  
+  // Clear existing options
+  categorySelect.innerHTML = '';
+  
+  // Add default uncategorized option
+  const defaultOption = document.createElement('option');
+  defaultOption.value = 'Uncategorized';
+  defaultOption.textContent = 'Uncategorized';
+  categorySelect.appendChild(defaultOption);
+  
+  // Add common categories
+  const commonCategories = ['AI Tools', 'Job Portals', 'YouTube', 'Blogs', 'Development', 'Learning', 'Games'];
+  
+  // Fetch user's existing categories
+  const userCategories = await fetchCategories();
+  
+  // Combine and deduplicate categories
+  const allCategories = [...new Set([...commonCategories, ...userCategories])]
+    .filter(cat => cat !== 'Uncategorized')
+    .sort();
+  
+  // Add all categories to dropdown
+  allCategories.forEach(category => {
+    const option = document.createElement('option');
+    option.value = category;
+    option.textContent = category;
+    categorySelect.appendChild(option);
+  });
+  
+  // Set auto-suggested category
+  if (allCategories.includes(autoCategory)) {
+    categorySelect.value = autoCategory;
+  }
+}
+
 // Save tab to database via API
 async function saveTabToDatabase(tabData) {
   try {
@@ -63,29 +141,30 @@ async function saveTabToDatabase(tabData) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        // Optional: shared secret header if configured on server
         ...(config.extensionSecret ? { 'x-extension-secret': config.extensionSecret } : {})
       },
-      body: JSON.stringify(tabData)
+      body: JSON.stringify({
+        ...tabData,
+        userEmail: config.userEmail
+      })
     });
 
     if (!response.ok) {
-      let details = '';
-      try { details = await response.text(); } catch { }
-      throw new Error(`HTTP ${response.status}: ${details || 'Non-OK response'}`);
+      let errorText = 'Failed to save';
+      try {
+        const errorData = await response.json();
+        errorText = errorData.error || errorText;
+      } catch {
+        errorText = `HTTP ${response.status}: ${response.statusText}`;
+      }
+      throw new Error(errorText);
     }
 
     const result = await response.json();
     return { success: true, data: result };
   } catch (error) {
     console.error('Failed to save tab:', error);
-
-    // Fallback: Save to local storage
-    const savedTabs = JSON.parse(localStorage.getItem('savedTabs') || '[]');
-    savedTabs.unshift({ ...tabData, id: Date.now().toString() });
-    localStorage.setItem('savedTabs', JSON.stringify(savedTabs.slice(0, 1000))); // Keep last 1000
-
-    return { success: true, fallback: true };
+    throw error;
   }
 }
 
@@ -97,18 +176,15 @@ async function initPopup() {
     document.getElementById('saveSection').style.display = 'none';
     document.getElementById('configSection').style.display = 'block';
 
-    // Load saved dashboard URL if exists
-    const dashboardUrl = document.getElementById('dashboardUrl');
-    const userEmail = document.getElementById('userEmail');
-    const extensionSecret = document.getElementById('extensionSecret');
+    // Load saved values if they exist
     if (config.dashboardUrl) {
-      dashboardUrl.value = config.dashboardUrl;
+      document.getElementById('dashboardUrl').value = config.dashboardUrl;
     }
     if (config.userEmail) {
-      userEmail.value = config.userEmail;
+      document.getElementById('userEmail').value = config.userEmail;
     }
-    if (extensionSecret && config.extensionSecret) {
-      extensionSecret.value = config.extensionSecret;
+    if (config.extensionSecret) {
+      document.getElementById('extensionSecret').value = config.extensionSecret;
     }
 
     return;
@@ -118,9 +194,30 @@ async function initPopup() {
   try {
     const tab = await getCurrentTab();
 
-    document.getElementById('tabTitle').textContent = tab.title || 'Untitled';
+    // Set tab title (editable)
+    const titleInput = document.createElement('input');
+    titleInput.type = 'text';
+    titleInput.value = tab.title || 'Untitled';
+    titleInput.className = 'tab-title-input';
+    titleInput.style.cssText = `
+      width: 100%;
+      border: none;
+      background: transparent;
+      font-size: 14px;
+      font-weight: 500;
+      color: #1f2937;
+      padding: 2px 0;
+      margin-bottom: 2px;
+    `;
+    
+    const titleElement = document.getElementById('tabTitle');
+    titleElement.innerHTML = '';
+    titleElement.appendChild(titleInput);
+
+    // Set tab URL (display only)
     document.getElementById('tabUrl').textContent = tab.url;
 
+    // Set favicon
     const favicon = getFaviconUrl(tab.url);
     if (favicon) {
       const favEl = document.getElementById('tabFavicon');
@@ -128,52 +225,8 @@ async function initPopup() {
       favEl.src = favicon;
     }
 
-    // Auto-categorize based on URL
-    const category = document.getElementById('category');
-    const url = tab.url.toLowerCase();
-
-    if (url.includes('youtube.com')) {
-      category.value = 'YouTube';
-    } else if (url.includes('linkedin.com') || url.includes('indeed.com') || url.includes('glassdoor.com')) {
-      category.value = 'Job Portals';
-    } else if (url.includes('openai.com') || url.includes('anthropic.com') || url.includes('huggingface.co')) {
-      category.value = 'AI Tools';
-    } else if (url.includes('github.com') || url.includes('stackoverflow.com') || url.includes('dev.to')) {
-      category.value = 'Development';
-    } else if (url.includes('medium.com') || url.includes('blog') || url.includes('news')) {
-      category.value = 'Blogs';
-    }
-
-    // If email and dashboard configured, fetch categories from dashboard API
-    if (config.dashboardUrl && config.userEmail) {
-      try {
-        const resp = await fetch(`${config.dashboardUrl}/api/categories?email=${encodeURIComponent(config.userEmail)}`);
-        if (resp.ok) {
-          const data = await resp.json();
-          const categories = Array.isArray(data.categories) ? data.categories : [];
-          const select = document.getElementById('category');
-          // Keep current value, repopulate options
-          const current = select.value;
-          select.innerHTML = '';
-          const defaultOption = document.createElement('option');
-          defaultOption.value = 'Uncategorized';
-          defaultOption.textContent = 'Uncategorized';
-          select.appendChild(defaultOption);
-          categories.forEach((c) => {
-            if (c && c !== 'Uncategorized') {
-              const opt = document.createElement('option');
-              opt.value = c;
-              opt.textContent = c;
-              select.appendChild(opt);
-            }
-          });
-          // Restore selection if present
-          if (categories.includes(current)) select.value = current;
-        }
-      } catch (e) {
-        // Ignore population errors silently
-      }
-    }
+    // Populate categories
+    await populateCategories(tab);
 
   } catch (error) {
     console.error('Failed to load tab info:', error);
@@ -184,10 +237,11 @@ async function initPopup() {
 // Event listeners
 document.addEventListener('DOMContentLoaded', initPopup);
 
+// Save configuration
 document.getElementById('saveConfig')?.addEventListener('click', async () => {
   const dashboardUrl = document.getElementById('dashboardUrl').value.trim();
   const userEmail = document.getElementById('userEmail').value.trim();
-  const extensionSecret = (document.getElementById('extensionSecret')?.value || '').trim();
+  const extensionSecret = document.getElementById('extensionSecret')?.value?.trim() || null;
 
   if (!dashboardUrl) {
     showStatus('Please enter a dashboard URL', 'error');
@@ -206,11 +260,15 @@ document.getElementById('saveConfig')?.addEventListener('click', async () => {
     return;
   }
 
-  // For demo purposes, we'll set default Supabase config
-  // In production, these would be fetched from your dashboard or set during setup
+  // Validate email
+  if (!userEmail.includes('@')) {
+    showStatus('Please enter a valid email', 'error');
+    return;
+  }
+
   config.dashboardUrl = dashboardUrl;
   config.userEmail = userEmail;
-  config.extensionSecret = extensionSecret || null;
+  config.extensionSecret = extensionSecret;
 
   await saveConfig();
   showStatus('Configuration saved!', 'success');
@@ -221,12 +279,14 @@ document.getElementById('saveConfig')?.addEventListener('click', async () => {
   }, 1500);
 });
 
+// Open dashboard
 document.getElementById('openDashboard')?.addEventListener('click', () => {
   if (config.dashboardUrl) {
     chrome.tabs.create({ url: config.dashboardUrl });
   }
 });
 
+// Save tab
 document.getElementById('saveTab')?.addEventListener('click', async () => {
   const saveBtn = document.getElementById('saveTab');
   const originalText = saveBtn.innerHTML;
@@ -237,46 +297,47 @@ document.getElementById('saveTab')?.addEventListener('click', async () => {
     saveBtn.innerHTML = '<div class="loading"></div> Saving...';
 
     const tab = await getCurrentTab();
+    const titleInput = document.querySelector('.tab-title-input');
     const category = document.getElementById('category').value;
     const description = document.getElementById('description').value.trim();
 
     const tabData = {
       url: tab.url,
-      title: tab.title || 'Untitled',
+      title: titleInput ? titleInput.value.trim() : (tab.title || 'Untitled'),
       category,
       description: description || null,
       favicon: getFaviconUrl(tab.url),
       created_at: new Date().toISOString()
     };
 
-    const result = await saveTabToDatabase({ ...tabData, userEmail: config.userEmail });
-
-    if (result.success) {
-      // Show success state
-      saveBtn.innerHTML = '<span class="saved-icon">✓</span> Saved!';
-      saveBtn.style.background = '#10b981';
-
-      if (result.fallback) {
-        showStatus('Tab saved locally (dashboard offline)', 'success');
-      } else {
-        showStatus('Tab saved successfully!', 'success');
-      }
-
-      // Reset form
-      document.getElementById('description').value = '';
-
-      // Reset button after delay
-      setTimeout(() => {
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = originalText;
-        saveBtn.style.background = '';
-      }, 2000);
+    // Validate required fields
+    if (!tabData.title.trim()) {
+      throw new Error('Title cannot be empty');
     }
+
+    await saveTabToDatabase(tabData);
+
+    // Show success state
+    saveBtn.innerHTML = '<span class="saved-icon">✓</span> Saved to Dashboard!';
+    saveBtn.style.background = '#10b981';
+
+    showStatus('Website saved successfully! Check your dashboard to see it.', 'success');
+
+    // Reset form
+    document.getElementById('description').value = '';
+
+    // Reset button after delay
+    setTimeout(() => {
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = originalText;
+      saveBtn.style.background = '';
+    }, 2000);
+
   } catch (error) {
     console.error('Save failed:', error);
     saveBtn.disabled = false;
     saveBtn.innerHTML = originalText;
-    showStatus('Failed to save tab. Please try again.', 'error');
+    showStatus(`Failed to save: ${error.message}`, 'error');
   }
 });
 

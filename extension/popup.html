@@ -85,6 +85,27 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      min-height: 20px;
+    }
+
+    .tab-title-input {
+      width: 100%;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      background: #f9fafb;
+      font-size: 14px;
+      font-weight: 500;
+      color: #1f2937;
+      padding: 4px 8px;
+      margin-bottom: 2px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .tab-title-input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+      background: white;
     }
 
     .tab-url {
@@ -245,12 +266,19 @@
 
   <div id="saveSection">
     <div class="current-tab">
-      <div class="tab-info">
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
         <img id="tabFavicon" class="tab-favicon" src="" alt="">
-        <div class="tab-details">
-          <div class="tab-title" id="tabTitle">Loading...</div>
-          <div class="tab-url" id="tabUrl">Loading...</div>
-        </div>
+        <div style="font-size: 12px; color: #6b7280; font-weight: 500;">Current Website</div>
+      </div>
+
+      <div class="form-group">
+        <label for="title">Website Title</label>
+        <div class="tab-title" id="tabTitle">Loading...</div>
+      </div>
+
+      <div class="form-group">
+        <label>Website URL</label>
+        <div class="tab-url" id="tabUrl">Loading...</div>
       </div>
 
       <div class="form-group">
