@@ -37,6 +37,14 @@ export default async function handler(req, res) {
       return;
     }
 
+    // Use the provided userId directly
+    let resolvedUserId = bodyUserId;
+    
+    if (!resolvedUserId) {
+      res.status(400).json({ error: 'Missing userId - authentication required' });
+      return;
+    }
+
     const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
     if (!supabaseUrl) {
@@ -48,24 +56,12 @@ export default async function handler(req, res) {
       return;
     }
 
-    const supabase = createClient(supabaseUrl, serviceKey);
-
-    // Resolve user id from email
-    let resolvedUserId = bodyUserId;
-    if (!resolvedUserId && userEmail) {
-      try {
-        // Use auth admin to get user by email
-        const { data: userData, error: userError } = await supabase.auth.admin.getUserByEmail(userEmail);
-        if (userError) {
-          res.status(500).json({ error: `User lookup failed: ${userError.message}` });
-          return;
-        }
-        resolvedUserId = userData?.user?.id;
-      } catch (e) {
-        res.status(500).json({ error: `User lookup exception: ${e?.message || e}` });
-        return;
+    const supabase = createClient(supabaseUrl, serviceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
       }
-    }
+    });
 
     if (!resolvedUserId) {
       res.status(400).json({ error: 'Missing userId or user not found for userEmail' });

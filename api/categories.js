@@ -26,18 +26,32 @@ export default async function handler(req, res) {
       return;
     }
 
-    const supabase = createClient(supabaseUrl, serviceKey);
+    const supabase = createClient(supabaseUrl, serviceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
 
-    // Resolve userId from email if provided
+    // Resolve userId from email if provided using RPC function
     let userId = req.query.userId;
     const email = req.query.email;
     if (!userId && email) {
-      const { data: userData, error: userError } = await supabase.auth.admin.getUserByEmail(String(email));
-      if (userError) {
-        res.status(500).json({ error: `User lookup failed: ${userError.message}` });
+      try {
+        // Use RPC function to get user ID by email
+        const { data, error } = await supabase
+          .rpc('get_user_id_by_email', { user_email: String(email) });
+          
+        if (error) {
+          res.status(500).json({ error: `User lookup failed: ${error.message}` });
+          return;
+        }
+        
+        userId = data;
+      } catch (e) {
+        res.status(500).json({ error: `User lookup exception: ${e?.message || e}` });
         return;
       }
-      userId = userData?.user?.id;
     }
 
     if (!userId) {

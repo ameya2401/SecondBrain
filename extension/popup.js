@@ -2,19 +2,23 @@
 let config = {
   dashboardUrl: null,
   userEmail: null,
+  userPassword: null,
+  userId: null,
   extensionSecret: null
 };
 
 // Load configuration from storage
 async function loadConfig() {
-  const result = await chrome.storage.sync.get(['dashboardUrl', 'userEmail', 'extensionSecret']);
+  const result = await chrome.storage.sync.get(['dashboardUrl', 'userEmail', 'userPassword', 'userId', 'extensionSecret']);
   config = {
     dashboardUrl: result.dashboardUrl || null,
     userEmail: result.userEmail || null,
+    userPassword: result.userPassword || null,
+    userId: result.userId || null,
     extensionSecret: result.extensionSecret || null
   };
 
-  return config.dashboardUrl && config.userEmail;
+  return config.dashboardUrl && config.userEmail && config.userPassword;
 }
 
 // Save configuration to storage
@@ -71,7 +75,49 @@ function autoCategorize(url) {
   return 'Uncategorized';
 }
 
-// Fetch categories from API
+// Authenticate user and get user ID
+async function authenticateUser() {
+  if (config.userId) {
+    return config.userId; // Already have user ID
+  }
+
+  try {
+    const response = await fetch(`${config.dashboardUrl}/api/auth-user`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(config.extensionSecret ? { 'x-extension-secret': config.extensionSecret } : {})
+      },
+      body: JSON.stringify({
+        email: config.userEmail,
+        password: config.userPassword
+      })
+    });
+
+    if (!response.ok) {
+      let errorText = 'Authentication failed';
+      try {
+        const errorData = await response.json();
+        errorText = errorData.error || errorText;
+      } catch {
+        errorText = `HTTP ${response.status}: ${response.statusText}`;
+      }
+      throw new Error(errorText);
+    }
+
+    const result = await response.json();
+    if (result.success && result.user) {
+      config.userId = result.user.id;
+      await saveConfig(); // Save the user ID for future use
+      return config.userId;
+    } else {
+      throw new Error('Invalid authentication response');
+    }
+  } catch (error) {
+    console.error('Authentication failed:', error);
+    throw error;
+  }
+}
 async function fetchCategories() {
   if (!config.dashboardUrl || !config.userEmail) return [];
   
@@ -137,6 +183,9 @@ async function populateCategories(currentTab) {
 // Save tab to database via API
 async function saveTabToDatabase(tabData) {
   try {
+    // First authenticate to get user ID
+    const userId = await authenticateUser();
+
     const response = await fetch(`${config.dashboardUrl}/api/save-tab`, {
       method: 'POST',
       headers: {
@@ -145,6 +194,7 @@ async function saveTabToDatabase(tabData) {
       },
       body: JSON.stringify({
         ...tabData,
+        userId: userId,
         userEmail: config.userEmail
       })
     });
@@ -182,6 +232,9 @@ async function initPopup() {
     }
     if (config.userEmail) {
       document.getElementById('userEmail').value = config.userEmail;
+    }
+    if (config.userPassword) {
+      document.getElementById('userPassword').value = config.userPassword;
     }
     if (config.extensionSecret) {
       document.getElementById('extensionSecret').value = config.extensionSecret;
@@ -241,6 +294,7 @@ document.addEventListener('DOMContentLoaded', initPopup);
 document.getElementById('saveConfig')?.addEventListener('click', async () => {
   const dashboardUrl = document.getElementById('dashboardUrl').value.trim();
   const userEmail = document.getElementById('userEmail').value.trim();
+  const userPassword = document.getElementById('userPassword').value.trim();
   const extensionSecret = document.getElementById('extensionSecret')?.value?.trim() || null;
 
   if (!dashboardUrl) {
@@ -249,6 +303,10 @@ document.getElementById('saveConfig')?.addEventListener('click', async () => {
   }
   if (!userEmail) {
     showStatus('Please enter your account email', 'error');
+    return;
+  }
+  if (!userPassword) {
+    showStatus('Please enter your account password', 'error');
     return;
   }
 
@@ -268,6 +326,8 @@ document.getElementById('saveConfig')?.addEventListener('click', async () => {
 
   config.dashboardUrl = dashboardUrl;
   config.userEmail = userEmail;
+  config.userPassword = userPassword;
+  config.userId = null; // Reset user ID so it gets fetched fresh
   config.extensionSecret = extensionSecret;
 
   await saveConfig();

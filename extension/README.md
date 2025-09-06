@@ -23,7 +23,10 @@ When you first use the extension, you'll need to configure:
 
 1. **Dashboard URL**: Your Vercel deployment URL (e.g., `https://your-app.vercel.app`)
 2. **Account Email**: The email you use to login to your SecondBrain dashboard
-3. **Extension Secret** (optional): Only needed if you've set up additional security
+3. **Account Password**: Your SecondBrain dashboard password
+4. **Extension Secret** (optional): Only needed if you've set up additional security
+
+**Important**: Your credentials are stored locally in the extension and used only to authenticate with your own dashboard.
 
 ## Usage
 
@@ -62,4 +65,5 @@ Make sure your Vercel deployment has these environment variables:
 
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY` 
+- `VITE_SUPABASE_ANON_KEY` (for user authentication)
 - `EXTENSION_SECRET` (optional)
