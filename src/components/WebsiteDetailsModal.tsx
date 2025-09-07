@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { X, ExternalLink, Globe, Edit2, Save, Calendar } from 'lucide-react';
-import { formatDistanceToNow, format } from 'date-fns';
+import { X, ExternalLink, Globe, Edit2, Save, Calendar, Bell, BellOff } from 'lucide-react';
+import { formatDistanceToNow, format, differenceInDays } from 'date-fns';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
@@ -75,6 +75,33 @@ const WebsiteDetailsModal: React.FC<WebsiteDetailsModalProps> = ({
       description: website.description || '',
     });
     setIsEditing(false);
+  };
+
+  const handleToggleReminders = async () => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('websites')
+        .update({
+          reminder_dismissed: !website.reminder_dismissed,
+          last_reminded_at: website.reminder_dismissed ? null : new Date().toISOString(),
+        })
+        .eq('id', website.id)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      toast.success(
+        website.reminder_dismissed 
+          ? 'Reminders enabled for this website' 
+          : 'Reminders disabled for this website'
+      );
+      onUpdate();
+    } catch (error: any) {
+      toast.error('Failed to update reminder settings');
+      console.error('Error:', error);
+    }
   };
 
   if (!isOpen) return null;
@@ -212,6 +239,40 @@ const WebsiteDetailsModal: React.FC<WebsiteDetailsModalProps> = ({
               <div className="text-gray-500">
                 {format(new Date(website.created_at), 'MMM d, yyyy \'at\' h:mm a')}
               </div>
+            </div>
+            
+            {/* Reminder Status */}
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {website.reminder_dismissed ? (
+                    <BellOff className="h-4 w-4 text-gray-400" />
+                  ) : (
+                    <Bell className="h-4 w-4 text-blue-600" />
+                  )}
+                  <span className="text-sm font-medium text-gray-700">
+                    {website.reminder_dismissed ? 'Reminders Disabled' : 'Reminders Enabled'}
+                  </span>
+                </div>
+                <button
+                  onClick={handleToggleReminders}
+                  className={`text-xs px-3 py-1 rounded-full transition-colors ${
+                    website.reminder_dismissed
+                      ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                      : 'bg-red-100 text-red-700 hover:bg-red-200'
+                  }`}
+                >
+                  {website.reminder_dismissed ? 'Enable' : 'Disable'}
+                </button>
+              </div>
+              {!website.reminder_dismissed && (
+                <p className="text-xs text-gray-500 mt-1">
+                  {differenceInDays(new Date(), new Date(website.created_at)) >= 3
+                    ? 'This website is eligible for reminders'
+                    : `Reminders will start in ${3 - differenceInDays(new Date(), new Date(website.created_at))} day(s)`
+                  }
+                </p>
+              )}
             </div>
           </div>
         </div>

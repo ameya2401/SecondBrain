@@ -7,6 +7,8 @@ export interface Website {
   favicon?: string;
   user_id: string;
   created_at: string;
+  last_reminded_at?: string;
+  reminder_dismissed?: boolean;
 }
 
 export interface Category {

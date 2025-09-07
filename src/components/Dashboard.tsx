@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { searchWebsitesWithAI } from '../lib/gemini';
 import { useAuth } from '../contexts/AuthContext';
+import { useReminders } from '../hooks/useReminders';
 import type { Website, Category } from '../types';
 import WebsiteCard from './WebsiteCard';
 import SearchBar from './SearchBar';
 import CategorySidebar from './CategorySidebar';
 import AddWebsiteModal from './AddWebsiteModal';
 import WebsiteDetailsModal from './WebsiteDetailsModal';
+import ReminderModal from './ReminderModal';
 import { LogOut, Plus, Grid, List } from 'lucide-react';
 import { signOut } from '../lib/supabase';
 import toast from 'react-hot-toast';
@@ -24,6 +26,15 @@ const Dashboard: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedWebsite, setSelectedWebsite] = useState<Website | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Initialize reminder system
+  const {
+    reminderWebsite,
+    showReminder,
+    handleOpenWebsite,
+    handleCheckLater,
+    handleDismissReminder
+  } = useReminders(websites, user?.id);
 
   useEffect(() => {
     if (user) {
@@ -327,6 +338,17 @@ const Dashboard: React.FC = () => {
           onClose={handleCloseDetailsModal}
           onUpdate={fetchWebsites}
           categories={categories.map(c => c.name)}
+        />
+      )}
+
+      {/* Reminder Modal */}
+      {reminderWebsite && (
+        <ReminderModal
+          website={reminderWebsite}
+          isOpen={showReminder}
+          onOpenWebsite={handleOpenWebsite}
+          onCheckLater={handleCheckLater}
+          onDismiss={handleDismissReminder}
         />
       )}
     </div>
