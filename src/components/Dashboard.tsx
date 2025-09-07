@@ -26,6 +26,12 @@ const Dashboard: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedWebsite, setSelectedWebsite] = useState<Website | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Callback to trigger data refresh
+  const triggerRefresh = () => {
+    setRefreshTrigger(prev => prev + 1);
+  };
 
   // Initialize reminder system
   const {
@@ -34,13 +40,13 @@ const Dashboard: React.FC = () => {
     handleOpenWebsite,
     handleCheckLater,
     handleDismissReminder
-  } = useReminders(websites, user?.id);
+  } = useReminders(websites, user?.id, triggerRefresh);
 
   useEffect(() => {
     if (user) {
       fetchWebsites();
     }
-  }, [user]);
+  }, [user, refreshTrigger]);
 
   useEffect(() => {
     if (!user) return;

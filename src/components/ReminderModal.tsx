@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ExternalLink, X, Clock, Globe } from 'lucide-react';
 import { formatDistanceToNow, differenceInDays } from 'date-fns';
 import type { Website } from '../types';
@@ -18,7 +18,27 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
   onCheckLater,
   onDismiss
 }) => {
+  const [isProcessing, setIsProcessing] = useState(false);
+  
   if (!isOpen) return null;
+
+  const handleOpenWebsite = async () => {
+    setIsProcessing(true);
+    await onOpenWebsite();
+    // Don't reset isProcessing here as the modal will close
+  };
+
+  const handleCheckLater = async () => {
+    setIsProcessing(true);
+    await onCheckLater();
+    // Don't reset isProcessing here as the modal will close
+  };
+
+  const handleDismiss = async () => {
+    setIsProcessing(true);
+    await onDismiss();
+    // Don't reset isProcessing here as the modal will close
+  };
 
   const daysAgo = differenceInDays(new Date(), new Date(website.created_at));
   const timeAgo = formatDistanceToNow(new Date(website.created_at), { addSuffix: true });
@@ -42,11 +62,16 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
             <h2 className="text-lg font-semibold text-gray-900">Reminder</h2>
           </div>
           <button
-            onClick={onDismiss}
-            className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+            onClick={handleDismiss}
+            disabled={isProcessing}
+            className="p-1 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
             title="Don't remind me about this website again"
           >
-            <X className="h-5 w-5" />
+            {isProcessing ? (
+              <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <X className="h-5 w-5" />
+            )}
           </button>
         </div>
 
@@ -97,17 +122,23 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3">
             <button
-              onClick={onOpenWebsite}
-              className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 font-medium"
+              onClick={handleOpenWebsite}
+              disabled={isProcessing}
+              className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 font-medium disabled:opacity-50"
             >
-              <ExternalLink className="h-4 w-4" />
-              Open Website
+              {isProcessing ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <ExternalLink className="h-4 w-4" />
+              )}
+              {isProcessing ? 'Opening...' : 'Open Website'}
             </button>
             <button
-              onClick={onCheckLater}
-              className="flex-1 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+              onClick={handleCheckLater}
+              disabled={isProcessing}
+              className="flex-1 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors font-medium disabled:opacity-50"
             >
-              Check Later
+              {isProcessing ? 'Saving...' : 'Check Later'}
             </button>
           </div>
 

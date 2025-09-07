@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { differenceInDays } from 'date-fns';
 import { supabase } from '../lib/supabase';
+import toast from 'react-hot-toast';
 import type { Website } from '../types';
 
 const REMINDER_INTERVAL_DAYS = 3;
@@ -14,7 +15,7 @@ interface UseRemindersResult {
   handleDismissReminder: () => void;
 }
 
-export const useReminders = (websites: Website[], userId: string | undefined): UseRemindersResult => {
+export const useReminders = (websites: Website[], userId: string | undefined, onDataUpdate?: () => void): UseRemindersResult => {
   const [reminderWebsite, setReminderWebsite] = useState<Website | null>(null);
   const [showReminder, setShowReminder] = useState(false);
 
@@ -27,16 +28,24 @@ export const useReminders = (websites: Website[], userId: string | undefined): U
   const checkForReminders = () => {
     const now = new Date();
     
+    console.log('Checking for reminders. Total websites:', websites.length);
+    
     // Find websites that need reminders
     const websitesNeedingReminders = websites.filter(website => {
       // Skip if reminders are dismissed for this website
-      if (website.reminder_dismissed) return false;
+      if (website.reminder_dismissed) {
+        console.log(`Skipping ${website.title}: reminders dismissed`);
+        return false;
+      }
       
       const createdAt = new Date(website.created_at);
       const daysSinceCreated = differenceInDays(now, createdAt);
       
       // Only show reminders for websites older than the interval
-      if (daysSinceCreated < REMINDER_INTERVAL_DAYS) return false;
+      if (daysSinceCreated < REMINDER_INTERVAL_DAYS) {
+        console.log(`Skipping ${website.title}: only ${daysSinceCreated} days old`);
+        return false;
+      }
       
       // Check if we've shown a reminder recently
       if (website.last_reminded_at) {
@@ -44,11 +53,17 @@ export const useReminders = (websites: Website[], userId: string | undefined): U
         const daysSinceLastReminder = differenceInDays(now, lastReminded);
         
         // Don't show again if within cooldown period
-        if (daysSinceLastReminder < REMINDER_COOLDOWN_DAYS) return false;
+        if (daysSinceLastReminder < REMINDER_COOLDOWN_DAYS) {
+          console.log(`Skipping ${website.title}: in cooldown (${daysSinceLastReminder} days since last reminder)`);
+          return false;
+        }
       }
       
+      console.log(`${website.title} is eligible for reminder (${daysSinceCreated} days old)`);
       return true;
     });
+
+    console.log('Websites needing reminders:', websitesNeedingReminders.length);
 
     // Show reminder for the oldest website that needs it
     if (websitesNeedingReminders.length > 0) {
@@ -58,105 +73,133 @@ export const useReminders = (websites: Website[], userId: string | undefined): U
       );
       
       const websiteToRemind = websitesNeedingReminders[0];
+      console.log('Showing reminder for:', websiteToRemind.title);
       setReminderWebsite(websiteToRemind);
       setShowReminder(true);
+    } else {
+      console.log('No reminders to show');
     }
   };
 
   const updateReminderTimestamp = async (websiteId: string) => {
     try {
-      // Try to use API endpoint if available, fallback to direct Supabase
-      if (window.location.origin.includes('localhost') || window.location.origin.includes('vercel.app')) {
-        await fetch('/api/update-reminder', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            websiteId,
-            userId,
-            action: 'check_later'
-          })
-        });
-      } else {
-        // Fallback to direct Supabase update
-        await supabase
-          .from('websites')
-          .update({ 
-            last_reminded_at: new Date().toISOString()
-          })
-          .eq('id', websiteId)
-          .eq('user_id', userId);
+      // Use direct Supabase update since we have the client available
+      const { error } = await supabase
+        .from('websites')
+        .update({ 
+          last_reminded_at: new Date().toISOString()
+        })
+        .eq('id', websiteId)
+        .eq('user_id', userId);
+        
+      if (error) {
+        console.error('Supabase error updating reminder:', error);
+        throw error;
       }
+      
+      // Refresh the website data
+      if (onDataUpdate) {
+        onDataUpdate();
+      }
+      
+      console.log('Reminder timestamp updated successfully');
     } catch (error) {
       console.error('Failed to update reminder timestamp:', error);
+      toast.error('Failed to update reminder. Please try again.');
+      throw error;
     }
   };
 
   const dismissReminder = async (websiteId: string) => {
     try {
-      // Try to use API endpoint if available, fallback to direct Supabase
-      if (window.location.origin.includes('localhost') || window.location.origin.includes('vercel.app')) {
-        await fetch('/api/update-reminder', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            websiteId,
-            userId,
-            action: 'dismiss'
-          })
-        });
-      } else {
-        // Fallback to direct Supabase update
-        await supabase
-          .from('websites')
-          .update({ 
-            reminder_dismissed: true,
-            last_reminded_at: new Date().toISOString()
-          })
-          .eq('id', websiteId)
-          .eq('user_id', userId);
+      // Use direct Supabase update since we have the client available
+      const { error } = await supabase
+        .from('websites')
+        .update({ 
+          reminder_dismissed: true,
+          last_reminded_at: new Date().toISOString()
+        })
+        .eq('id', websiteId)
+        .eq('user_id', userId);
+        
+      if (error) {
+        console.error('Supabase error dismissing reminder:', error);
+        throw error;
       }
+      
+      // Refresh the website data
+      if (onDataUpdate) {
+        onDataUpdate();
+      }
+      
+      console.log('Reminder dismissed successfully');
     } catch (error) {
       console.error('Failed to dismiss reminder:', error);
+      toast.error('Failed to dismiss reminder. Please try again.');
+      throw error;
     }
   };
 
-  const handleOpenWebsite = () => {
+  const handleOpenWebsite = async () => {
     if (reminderWebsite) {
-      // Open website in new tab
-      window.open(reminderWebsite.url, '_blank');
-      
-      // Update reminder timestamp
-      updateReminderTimestamp(reminderWebsite.id);
-      
-      // Close modal
-      setShowReminder(false);
-      setReminderWebsite(null);
+      try {
+        // Open website in new tab
+        window.open(reminderWebsite.url, '_blank');
+        
+        // Update reminder timestamp
+        await updateReminderTimestamp(reminderWebsite.id);
+        
+        // Small delay to ensure database update completes
+        setTimeout(() => {
+          setShowReminder(false);
+          setReminderWebsite(null);
+        }, 100);
+      } catch (error) {
+        console.error('Error handling open website:', error);
+        // Still close the modal even if update fails
+        setShowReminder(false);
+        setReminderWebsite(null);
+      }
     }
   };
 
-  const handleCheckLater = () => {
+  const handleCheckLater = async () => {
     if (reminderWebsite) {
-      // Update reminder timestamp so it won't show again for a while
-      updateReminderTimestamp(reminderWebsite.id);
-      
-      // Close modal
-      setShowReminder(false);
-      setReminderWebsite(null);
+      try {
+        // Update reminder timestamp so it won't show again for a while
+        await updateReminderTimestamp(reminderWebsite.id);
+        
+        // Small delay to ensure database update completes
+        setTimeout(() => {
+          setShowReminder(false);
+          setReminderWebsite(null);
+        }, 100);
+      } catch (error) {
+        console.error('Error handling check later:', error);
+        // Still close the modal even if update fails
+        setShowReminder(false);
+        setReminderWebsite(null);
+      }
     }
   };
 
-  const handleDismissReminder = () => {
+  const handleDismissReminder = async () => {
     if (reminderWebsite) {
-      // Permanently dismiss reminders for this website
-      dismissReminder(reminderWebsite.id);
-      
-      // Close modal
-      setShowReminder(false);
-      setReminderWebsite(null);
+      try {
+        // Permanently dismiss reminders for this website
+        await dismissReminder(reminderWebsite.id);
+        
+        // Small delay to ensure database update completes
+        setTimeout(() => {
+          setShowReminder(false);
+          setReminderWebsite(null);
+        }, 100);
+      } catch (error) {
+        console.error('Error handling dismiss reminder:', error);
+        // Still close the modal even if update fails
+        setShowReminder(false);
+        setReminderWebsite(null);
+      }
     }
   };
 
