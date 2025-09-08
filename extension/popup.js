@@ -139,9 +139,14 @@ async function fetchCategories() {
 }
 
 // Populate category dropdown
-async function populateCategories(currentTab) {
+async function populateCategories(currentTab, showStatus = false) {
   const categorySelect = document.getElementById('category');
   const autoCategory = autoCategorize(currentTab.url);
+  
+  if (showStatus) {
+    // Show loading status for manual refresh
+    showStatus('Refreshing categories...', 'info');
+  }
   
   // Clear existing options
   categorySelect.innerHTML = '';
@@ -171,6 +176,10 @@ async function populateCategories(currentTab) {
   // Set auto-suggested category if it exists
   if (validCategories.includes(autoCategory)) {
     categorySelect.value = autoCategory;
+  }
+  
+  if (showStatus && validCategories.length > 0) {
+    showStatus(`Categories refreshed (${validCategories.length} found)`, 'success');
   }
 }
 
@@ -284,6 +293,32 @@ async function initPopup() {
 // Event listeners
 document.addEventListener('DOMContentLoaded', initPopup);
 
+// Add visibility change listener to refresh categories when popup becomes visible
+document.addEventListener('visibilitychange', async () => {
+  if (!document.hidden && config.dashboardUrl && config.userEmail) {
+    // Popup became visible, refresh categories if already configured
+    try {
+      const tab = await getCurrentTab();
+      await populateCategories(tab);
+    } catch (error) {
+      console.error('Failed to refresh categories:', error);
+    }
+  }
+});
+
+// Add focus listener as additional refresh trigger
+window.addEventListener('focus', async () => {
+  if (config.dashboardUrl && config.userEmail) {
+    // Extension popup got focus, refresh categories
+    try {
+      const tab = await getCurrentTab();
+      await populateCategories(tab);
+    } catch (error) {
+      console.error('Failed to refresh categories on focus:', error);
+    }
+  }
+});
+
 // Save configuration
 document.getElementById('saveConfig')?.addEventListener('click', async () => {
   const dashboardUrl = document.getElementById('dashboardUrl').value.trim();
@@ -337,6 +372,36 @@ document.getElementById('saveConfig')?.addEventListener('click', async () => {
 document.getElementById('openDashboard')?.addEventListener('click', () => {
   if (config.dashboardUrl) {
     chrome.tabs.create({ url: config.dashboardUrl });
+  }
+});
+
+// Refresh categories button
+document.getElementById('refreshCategories')?.addEventListener('click', async () => {
+  const refreshBtn = document.getElementById('refreshCategories');
+  const originalText = refreshBtn.innerHTML;
+  
+  try {
+    // Show loading state
+    refreshBtn.innerHTML = '⏳';
+    refreshBtn.disabled = true;
+    
+    // Refresh categories
+    const tab = await getCurrentTab();
+    await populateCategories(tab, true);
+    
+    // Show success
+    refreshBtn.innerHTML = '✓';
+    setTimeout(() => {
+      refreshBtn.innerHTML = originalText;
+      refreshBtn.disabled = false;
+    }, 1000);
+  } catch (error) {
+    console.error('Failed to refresh categories:', error);
+    refreshBtn.innerHTML = '❌';
+    setTimeout(() => {
+      refreshBtn.innerHTML = originalText;
+      refreshBtn.disabled = false;
+    }, 2000);
   }
 });
 

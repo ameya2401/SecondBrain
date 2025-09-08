@@ -164,34 +164,37 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({
       <div className="space-y-3">
         {/* Add Category Section */}
         {isAddingCategory ? (
-          <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
-            <input
-              type="text"
-              value={newCategoryName}
-              onChange={(e) => setNewCategoryName(e.target.value)}
-              onKeyDown={handleKeyPress}
-              placeholder="Enter category name..."
-              className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              autoFocus
-              disabled={isCreating}
-            />
-            <button
-              onClick={handleCreateCategory}
-              disabled={!newCategoryName.trim() || isCreating}
-              className="px-3 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isCreating ? '...' : 'Add'}
-            </button>
-            <button
-              onClick={() => {
-                setIsAddingCategory(false);
-                setNewCategoryName('');
-              }}
-              disabled={isCreating}
-              className="p-2 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
-            >
-              <X className="h-4 w-4" />
-            </button>
+          <div className="bg-blue-50 rounded-lg border border-blue-200 p-3">
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                onKeyDown={handleKeyPress}
+                placeholder="Enter category name..."
+                className="flex-1 min-w-0 px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                autoFocus
+                disabled={isCreating}
+              />
+              <button
+                onClick={handleCreateCategory}
+                disabled={!newCategoryName.trim() || isCreating}
+                className="flex-shrink-0 px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isCreating ? '...' : 'Add'}
+              </button>
+              <button
+                onClick={() => {
+                  setIsAddingCategory(false);
+                  setNewCategoryName('');
+                }}
+                disabled={isCreating}
+                className="flex-shrink-0 p-2 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50 rounded"
+                title="Cancel"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         ) : (
           <button
