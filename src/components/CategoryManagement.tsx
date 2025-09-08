@@ -78,14 +78,13 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({
 
     setIsCreating(true);
     try {
-      const response = await fetch('/api/categories', {
+      const response = await fetch(`/api/categories?userId=${user.id}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: newCategoryName.trim(),
-          userId: user.id
+          name: newCategoryName.trim()
         })
       });
 
@@ -117,15 +116,14 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({
 
     setIsDeleting(true);
     try {
-      const response = await fetch('/api/categories', {
+      const response = await fetch(`/api/categories?userId=${user.id}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           id: category.id,
-          name: category.name,
-          userId: user.id
+          name: category.name
         })
       });
 
