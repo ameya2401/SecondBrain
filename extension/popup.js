@@ -139,11 +139,11 @@ async function fetchCategories() {
 }
 
 // Populate category dropdown
-async function populateCategories(currentTab, showStatus = false) {
+async function populateCategories(currentTab, showStatusMessages = false) {
   const categorySelect = document.getElementById('category');
   const autoCategory = autoCategorize(currentTab.url);
   
-  if (showStatus) {
+  if (showStatusMessages) {
     // Show loading status for manual refresh
     showStatus('Refreshing categories...', 'info');
   }
@@ -178,7 +178,7 @@ async function populateCategories(currentTab, showStatus = false) {
     categorySelect.value = autoCategory;
   }
   
-  if (showStatus && validCategories.length > 0) {
+  if (showStatusMessages && validCategories.length > 0) {
     showStatus(`Categories refreshed (${validCategories.length} found)`, 'success');
   }
 }
