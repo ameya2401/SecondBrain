@@ -1,12 +1,14 @@
-import React from 'react';
-import { Folder, FolderOpen, Hash } from 'lucide-react';
+import React, { useState } from 'react';
+import { Folder, FolderOpen, Hash, Settings } from 'lucide-react';
 import type { Category } from '../types';
+import CategoryManagement from './CategoryManagement';
 
 interface CategorySidebarProps {
   categories: Category[];
   selectedCategory: string;
   onCategorySelect: (category: string) => void;
   totalWebsites: number;
+  onCategoryChange: () => void;
 }
 
 const CategorySidebar: React.FC<CategorySidebarProps> = ({
@@ -14,7 +16,9 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
   selectedCategory,
   onCategorySelect,
   totalWebsites,
+  onCategoryChange,
 }) => {
+  const [showManagement, setShowManagement] = useState(false);
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
       <h2 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
@@ -74,6 +78,33 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
           No categories yet
         </p>
       )}
+      
+      {/* Category Management Toggle */}
+      <div className="mt-4 pt-4 border-t border-gray-200">
+        <button
+          onClick={() => setShowManagement(!showManagement)}
+          className="w-full flex items-center justify-between px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <Settings className="h-4 w-4" />
+            Manage Categories
+          </div>
+          <span className={`transform transition-transform ${
+            showManagement ? 'rotate-180' : ''
+          }`}>
+            ↓
+          </span>
+        </button>
+        
+        {showManagement && (
+          <div className="mt-3 pl-2">
+            <CategoryManagement
+              categories={categories}
+              onCategoryChange={onCategoryChange}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 };

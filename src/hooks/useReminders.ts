@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { differenceInDays } from 'date-fns';
 import { supabase } from '../lib/supabase';
+import { checkReminderMigration, showMigrationWarning } from '../lib/reminderMigration';
 import toast from 'react-hot-toast';
 import type { Website } from '../types';
 
@@ -18,12 +19,34 @@ interface UseRemindersResult {
 export const useReminders = (websites: Website[], userId: string | undefined, onDataUpdate?: () => void): UseRemindersResult => {
   const [reminderWebsite, setReminderWebsite] = useState<Website | null>(null);
   const [showReminder, setShowReminder] = useState(false);
+  const [migrationChecked, setMigrationChecked] = useState(false);
+  const [migrationExists, setMigrationExists] = useState(false);
 
   useEffect(() => {
     if (!userId || websites.length === 0) return;
 
-    checkForReminders();
+    // Check migration first, then check for reminders
+    checkMigrationAndReminders();
   }, [websites, userId]);
+
+  const checkMigrationAndReminders = async () => {
+    if (!userId) return;
+    
+    if (!migrationChecked) {
+      const migrationOk = await checkReminderMigration(userId);
+      setMigrationExists(migrationOk);
+      setMigrationChecked(true);
+      
+      if (!migrationOk) {
+        console.warn(showMigrationWarning());
+        return; // Don't check for reminders if migration is missing
+      }
+    }
+    
+    if (migrationExists) {
+      checkForReminders();
+    }
+  };
 
   const checkForReminders = () => {
     const now = new Date();
@@ -82,20 +105,38 @@ export const useReminders = (websites: Website[], userId: string | undefined, on
   };
 
   const updateReminderTimestamp = async (websiteId: string) => {
+    if (!migrationExists) {
+      toast.error('Reminder feature requires database migration. Please contact support.');
+      throw new Error('Migration not applied');
+    }
+    
     try {
+      console.log('Updating reminder timestamp for website:', websiteId);
+      
       // Use direct Supabase update since we have the client available
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('websites')
         .update({ 
           last_reminded_at: new Date().toISOString()
         })
         .eq('id', websiteId)
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .select();
         
       if (error) {
         console.error('Supabase error updating reminder:', error);
+        
+        // Check if the column doesn't exist
+        if (error.message.includes('column "last_reminded_at" of relation "websites" does not exist')) {
+          console.warn('Reminder columns not found. Migration may not be applied yet.');
+          toast.error('Reminder feature not yet available. Please contact support.');
+        } else {
+          toast.error('Failed to update reminder. Please try again.');
+        }
         throw error;
       }
+      
+      console.log('Database update result:', data);
       
       // Refresh the website data
       if (onDataUpdate) {
@@ -105,27 +146,45 @@ export const useReminders = (websites: Website[], userId: string | undefined, on
       console.log('Reminder timestamp updated successfully');
     } catch (error) {
       console.error('Failed to update reminder timestamp:', error);
-      toast.error('Failed to update reminder. Please try again.');
       throw error;
     }
   };
 
   const dismissReminder = async (websiteId: string) => {
+    if (!migrationExists) {
+      toast.error('Reminder feature requires database migration. Please contact support.');
+      throw new Error('Migration not applied');
+    }
+    
     try {
+      console.log('Dismissing reminder for website:', websiteId);
+      
       // Use direct Supabase update since we have the client available
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('websites')
         .update({ 
           reminder_dismissed: true,
           last_reminded_at: new Date().toISOString()
         })
         .eq('id', websiteId)
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .select();
         
       if (error) {
         console.error('Supabase error dismissing reminder:', error);
+        
+        // Check if the columns don't exist
+        if (error.message.includes('column "reminder_dismissed" of relation "websites" does not exist') ||
+            error.message.includes('column "last_reminded_at" of relation "websites" does not exist')) {
+          console.warn('Reminder columns not found. Migration may not be applied yet.');
+          toast.error('Reminder feature not yet available. Please contact support.');
+        } else {
+          toast.error('Failed to dismiss reminder. Please try again.');
+        }
         throw error;
       }
+      
+      console.log('Database update result:', data);
       
       // Refresh the website data
       if (onDataUpdate) {
@@ -135,7 +194,6 @@ export const useReminders = (websites: Website[], userId: string | undefined, on
       console.log('Reminder dismissed successfully');
     } catch (error) {
       console.error('Failed to dismiss reminder:', error);
-      toast.error('Failed to dismiss reminder. Please try again.');
       throw error;
     }
   };

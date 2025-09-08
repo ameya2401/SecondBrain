@@ -56,20 +56,16 @@ function showStatus(message, type = 'success') {
   }
 }
 
-// Auto-categorize based on URL
+// Auto-categorize based on URL (simplified for user categories)
 function autoCategorize(url) {
   const urlLower = url.toLowerCase();
   
+  // Return 'Uncategorized' as default since we no longer have predefined categories
+  // Users will need to manually select or create categories
   if (urlLower.includes('youtube.com')) {
     return 'YouTube';
-  } else if (urlLower.includes('linkedin.com') || urlLower.includes('indeed.com') || urlLower.includes('glassdoor.com')) {
-    return 'Job Portals';
-  } else if (urlLower.includes('openai.com') || urlLower.includes('anthropic.com') || urlLower.includes('huggingface.co') || urlLower.includes('gemini.google.com')) {
-    return 'AI Tools';
   } else if (urlLower.includes('github.com') || urlLower.includes('stackoverflow.com') || urlLower.includes('dev.to')) {
     return 'Development';
-  } else if (urlLower.includes('medium.com') || urlLower.includes('blog') || urlLower.includes('news')) {
-    return 'Blogs';
   }
   
   return 'Uncategorized';
@@ -132,7 +128,8 @@ async function fetchCategories() {
 
     if (response.ok) {
       const data = await response.json();
-      return Array.isArray(data.categories) ? data.categories : [];
+      // Return array of category names for backward compatibility
+      return Array.isArray(data.categories) ? data.categories.map(cat => cat.name || cat) : [];
     }
   } catch (error) {
     console.error('Failed to fetch categories:', error);
@@ -155,27 +152,24 @@ async function populateCategories(currentTab) {
   defaultOption.textContent = 'Uncategorized';
   categorySelect.appendChild(defaultOption);
   
-  // Add common categories
-  const commonCategories = ['AI Tools', 'Job Portals', 'YouTube', 'Blogs', 'Development', 'Learning', 'Games'];
-  
-  // Fetch user's existing categories
+  // Fetch user's existing categories from the new API
   const userCategories = await fetchCategories();
   
-  // Combine and deduplicate categories
-  const allCategories = [...new Set([...commonCategories, ...userCategories])]
-    .filter(cat => cat !== 'Uncategorized')
+  // Filter out empty/invalid categories and sort
+  const validCategories = userCategories
+    .filter(cat => cat && cat.trim() && cat !== 'Uncategorized')
     .sort();
   
   // Add all categories to dropdown
-  allCategories.forEach(category => {
+  validCategories.forEach(category => {
     const option = document.createElement('option');
     option.value = category;
     option.textContent = category;
     categorySelect.appendChild(option);
   });
   
-  // Set auto-suggested category
-  if (allCategories.includes(autoCategory)) {
+  // Set auto-suggested category if it exists
+  if (validCategories.includes(autoCategory)) {
     categorySelect.value = autoCategory;
   }
 }

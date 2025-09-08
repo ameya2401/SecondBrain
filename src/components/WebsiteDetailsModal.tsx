@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, ExternalLink, Globe, Edit2, Save, Calendar, Bell, BellOff } from 'lucide-react';
 import { formatDistanceToNow, format, differenceInDays } from 'date-fns';
 import { supabase } from '../lib/supabase';
+import { checkReminderMigration } from '../lib/reminderMigration';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import type { Website } from '../types';
@@ -24,11 +25,19 @@ const WebsiteDetailsModal: React.FC<WebsiteDetailsModalProps> = ({
   const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [reminderMigrationExists, setReminderMigrationExists] = useState(true);
   const [editData, setEditData] = useState({
     title: website.title,
     category: website.category,
     description: website.description || '',
   });
+
+  useEffect(() => {
+    // Check if reminder migration exists
+    if (user) {
+      checkReminderMigration(user.id).then(setReminderMigrationExists);
+    }
+  }, [user]);
 
   const getFaviconUrl = (url: string) => {
     try {
@@ -80,17 +89,38 @@ const WebsiteDetailsModal: React.FC<WebsiteDetailsModalProps> = ({
   const handleToggleReminders = async () => {
     if (!user) return;
 
+    if (!reminderMigrationExists) {
+      toast.error('Reminder feature requires database migration. Please see MIGRATION_INSTRUCTIONS.md');
+      return;
+    }
+
     try {
-      const { error } = await supabase
+      console.log('Toggling reminders for website:', website.id);
+      
+      const { data, error } = await supabase
         .from('websites')
         .update({
           reminder_dismissed: !website.reminder_dismissed,
           last_reminded_at: website.reminder_dismissed ? null : new Date().toISOString(),
         })
         .eq('id', website.id)
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error toggling reminders:', error);
+        
+        // Check if the columns don't exist
+        if (error.message.includes('column "reminder_dismissed" of relation "websites" does not exist') ||
+            error.message.includes('column "last_reminded_at" of relation "websites" does not exist')) {
+          toast.error('Reminder feature not yet available. Database migration needed.');
+        } else {
+          toast.error('Failed to update reminder settings');
+        }
+        throw error;
+      }
+      
+      console.log('Database update result:', data);
 
       toast.success(
         website.reminder_dismissed 
@@ -99,8 +129,7 @@ const WebsiteDetailsModal: React.FC<WebsiteDetailsModalProps> = ({
       );
       onUpdate();
     } catch (error: any) {
-      toast.error('Failed to update reminder settings');
-      console.error('Error:', error);
+      console.error('Error toggling reminders:', error);
     }
   };
 
@@ -242,38 +271,40 @@ const WebsiteDetailsModal: React.FC<WebsiteDetailsModalProps> = ({
             </div>
             
             {/* Reminder Status */}
-            <div className="mt-4 pt-4 border-t border-gray-100">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {website.reminder_dismissed ? (
-                    <BellOff className="h-4 w-4 text-gray-400" />
-                  ) : (
-                    <Bell className="h-4 w-4 text-blue-600" />
-                  )}
-                  <span className="text-sm font-medium text-gray-700">
-                    {website.reminder_dismissed ? 'Reminders Disabled' : 'Reminders Enabled'}
-                  </span>
+            {reminderMigrationExists && (
+              <div className="mt-4 pt-4 border-t border-gray-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {website.reminder_dismissed ? (
+                      <BellOff className="h-4 w-4 text-gray-400" />
+                    ) : (
+                      <Bell className="h-4 w-4 text-blue-600" />
+                    )}
+                    <span className="text-sm font-medium text-gray-700">
+                      {website.reminder_dismissed ? 'Reminders Disabled' : 'Reminders Enabled'}
+                    </span>
+                  </div>
+                  <button
+                    onClick={handleToggleReminders}
+                    className={`text-xs px-3 py-1 rounded-full transition-colors ${
+                      website.reminder_dismissed
+                        ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                        : 'bg-red-100 text-red-700 hover:bg-red-200'
+                    }`}
+                  >
+                    {website.reminder_dismissed ? 'Enable' : 'Disable'}
+                  </button>
                 </div>
-                <button
-                  onClick={handleToggleReminders}
-                  className={`text-xs px-3 py-1 rounded-full transition-colors ${
-                    website.reminder_dismissed
-                      ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                      : 'bg-red-100 text-red-700 hover:bg-red-200'
-                  }`}
-                >
-                  {website.reminder_dismissed ? 'Enable' : 'Disable'}
-                </button>
+                {!website.reminder_dismissed && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    {differenceInDays(new Date(), new Date(website.created_at)) >= 3
+                      ? 'This website is eligible for reminders'
+                      : `Reminders will start in ${3 - differenceInDays(new Date(), new Date(website.created_at))} day(s)`
+                    }
+                  </p>
+                )}
               </div>
-              {!website.reminder_dismissed && (
-                <p className="text-xs text-gray-500 mt-1">
-                  {differenceInDays(new Date(), new Date(website.created_at)) >= 3
-                    ? 'This website is eligible for reminders'
-                    : `Reminders will start in ${3 - differenceInDays(new Date(), new Date(website.created_at))} day(s)`
-                  }
-                </p>
-              )}
-            </div>
+            )}
           </div>
         </div>
 

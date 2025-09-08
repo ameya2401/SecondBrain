@@ -140,13 +140,6 @@ const AddWebsiteModal: React.FC<AddWebsiteModalProps> = ({
                 {categories.map((cat) => (
                   <option key={cat} value={cat} />
                 ))}
-                <option value="AI Tools" />
-                <option value="Job Portals" />
-                <option value="YouTube" />
-                <option value="Blogs" />
-                <option value="Games" />
-                <option value="Learning" />
-                <option value="Development" />
               </datalist>
             </div>
           </div>

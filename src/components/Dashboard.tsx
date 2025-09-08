@@ -33,6 +33,12 @@ const Dashboard: React.FC = () => {
     setRefreshTrigger(prev => prev + 1);
   };
 
+  // Callback specifically for category changes
+  const handleCategoryChange = () => {
+    fetchCategories();
+    fetchWebsites(); // Also refresh websites to update counts
+  };
+
   // Initialize reminder system
   const {
     reminderWebsite,
@@ -50,7 +56,9 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     if (!user) return;
-    const channel = (supabase as any).channel('websites-realtime')
+    
+    // Subscribe to both websites and categories changes
+    const websitesChannel = (supabase as any).channel('websites-realtime')
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
@@ -61,8 +69,22 @@ const Dashboard: React.FC = () => {
       })
       .subscribe();
 
+    const categoriesChannel = (supabase as any).channel('categories-realtime')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'categories',
+        filter: `user_id=eq.${user.id}`,
+      }, () => {
+        fetchCategories();
+      })
+      .subscribe();
+
     return () => {
-      try { (supabase as any).removeChannel(channel); } catch {}
+      try { 
+        (supabase as any).removeChannel(websitesChannel); 
+        (supabase as any).removeChannel(categoriesChannel);
+      } catch {}
     };
   }, [user]);
 
@@ -82,25 +104,29 @@ const Dashboard: React.FC = () => {
 
       setWebsites(data || []);
       
-      // Update categories
-      const categoryMap = new Map<string, number>();
-      data?.forEach(website => {
-        const count = categoryMap.get(website.category) || 0;
-        categoryMap.set(website.category, count + 1);
-      });
-      
-      const categoriesArray: Category[] = Array.from(categoryMap.entries()).map(([name, count]) => ({
-        id: name,
-        name,
-        count,
-      }));
-      
-      setCategories(categoriesArray);
+      // Fetch categories from dedicated categories table
+      await fetchCategories();
     } catch (error: any) {
       toast.error('Failed to fetch websites');
       console.error('Error:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCategories = async () => {
+    if (!user) return;
+    
+    try {
+      const response = await fetch(`/api/categories?userId=${user.id}`);
+      if (response.ok) {
+        const result = await response.json();
+        setCategories(result.categories || []);
+      } else {
+        console.error('Failed to fetch categories');
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error);
     }
   };
 
@@ -160,6 +186,7 @@ const Dashboard: React.FC = () => {
 
       toast.success('Website deleted successfully');
       fetchWebsites();
+      handleCategoryChange(); // Update category counts
     } catch (error: any) {
       toast.error('Failed to delete website');
       console.error('Error:', error);
@@ -229,6 +256,7 @@ const Dashboard: React.FC = () => {
               selectedCategory={selectedCategory}
               onCategorySelect={setSelectedCategory}
               totalWebsites={websites.length}
+              onCategoryChange={handleCategoryChange}
             />
             
             <button
