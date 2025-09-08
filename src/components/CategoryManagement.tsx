@@ -76,6 +76,14 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({
   const handleCreateCategory = async () => {
     if (!newCategoryName.trim() || !user) return;
 
+    const trimmedName = newCategoryName.trim();
+    
+    // Prevent creation of system categories
+    if (trimmedName.toLowerCase() === 'recently added') {
+      toast.error('"Recently Added" is a system category and cannot be created manually');
+      return;
+    }
+
     setIsCreating(true);
     try {
       const response = await fetch(`/api/categories?userId=${user.id}`, {
@@ -84,7 +92,7 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: newCategoryName.trim()
+          name: trimmedName
         })
       });
 
@@ -209,26 +217,33 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({
         {/* Categories List */}
         {categories.length > 0 && (
           <div className="space-y-1">
-            {categories.map((category) => (
-              <div
-                key={category.id}
-                className="flex items-center justify-between p-2 rounded hover:bg-gray-50 group"
-              >
-                <div className="flex items-center gap-2 flex-1">
-                  <span className="text-sm text-gray-700 capitalize">{category.name}</span>
-                  <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-full">
-                    {category.count}
-                  </span>
-                </div>
-                <button
-                  onClick={() => setCategoryToDelete(category)}
-                  className="p-1 text-gray-400 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100"
-                  title={category.count > 0 ? 'Cannot delete category in use' : 'Delete category'}
+            {categories.map((category) => {
+              // Don't show 'Recently Added' in the management interface as it's a system category
+              if (category.name === 'Recently Added') {
+                return null;
+              }
+              
+              return (
+                <div
+                  key={category.id}
+                  className="flex items-center justify-between p-2 rounded hover:bg-gray-50 group"
                 >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            ))}
+                  <div className="flex items-center gap-2 flex-1">
+                    <span className="text-sm text-gray-700 capitalize">{category.name}</span>
+                    <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-full">
+                      {category.count}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setCategoryToDelete(category)}
+                    className="p-1 text-gray-400 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                    title={category.count > 0 ? 'Cannot delete category in use' : 'Delete category'}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              );
+            })}
           </div>
         )}
 

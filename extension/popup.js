@@ -56,19 +56,10 @@ function showStatus(message, type = 'success') {
   }
 }
 
-// Auto-categorize based on URL (simplified for user categories)
+// Auto-categorize based on URL (simplified - always returns 'Recently Added')
 function autoCategorize(url) {
-  const urlLower = url.toLowerCase();
-  
-  // Return 'Uncategorized' as default since we no longer have predefined categories
-  // Users will need to manually select or create categories
-  if (urlLower.includes('youtube.com')) {
-    return 'YouTube';
-  } else if (urlLower.includes('github.com') || urlLower.includes('stackoverflow.com') || urlLower.includes('dev.to')) {
-    return 'Development';
-  }
-  
-  return 'Uncategorized';
+  // Always return 'Recently Added' for the temporary fix
+  return 'Recently Added';
 }
 
 // Authenticate user and get user ID
@@ -114,74 +105,7 @@ async function authenticateUser() {
     throw error;
   }
 }
-async function fetchCategories() {
-  if (!config.dashboardUrl || !config.userEmail) return [];
-  
-  try {
-    const response = await fetch(`${config.dashboardUrl}/api/categories?email=${encodeURIComponent(config.userEmail)}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(config.extensionSecret ? { 'x-extension-secret': config.extensionSecret } : {})
-      }
-    });
 
-    if (response.ok) {
-      const data = await response.json();
-      // Return array of category names for backward compatibility
-      return Array.isArray(data.categories) ? data.categories.map(cat => cat.name || cat) : [];
-    }
-  } catch (error) {
-    console.error('Failed to fetch categories:', error);
-  }
-  
-  return [];
-}
-
-// Populate category dropdown
-async function populateCategories(currentTab, showStatusMessages = false) {
-  const categorySelect = document.getElementById('category');
-  const autoCategory = autoCategorize(currentTab.url);
-  
-  if (showStatusMessages) {
-    // Show loading status for manual refresh
-    showStatus('Refreshing categories...', 'info');
-  }
-  
-  // Clear existing options
-  categorySelect.innerHTML = '';
-  
-  // Add default uncategorized option
-  const defaultOption = document.createElement('option');
-  defaultOption.value = 'Uncategorized';
-  defaultOption.textContent = 'Uncategorized';
-  categorySelect.appendChild(defaultOption);
-  
-  // Fetch user's existing categories from the new API
-  const userCategories = await fetchCategories();
-  
-  // Filter out empty/invalid categories and sort
-  const validCategories = userCategories
-    .filter(cat => cat && cat.trim() && cat !== 'Uncategorized')
-    .sort();
-  
-  // Add all categories to dropdown
-  validCategories.forEach(category => {
-    const option = document.createElement('option');
-    option.value = category;
-    option.textContent = category;
-    categorySelect.appendChild(option);
-  });
-  
-  // Set auto-suggested category if it exists
-  if (validCategories.includes(autoCategory)) {
-    categorySelect.value = autoCategory;
-  }
-  
-  if (showStatusMessages && validCategories.length > 0) {
-    showStatus(`Categories refreshed (${validCategories.length} found)`, 'success');
-  }
-}
 
 // Save tab to database via API
 async function saveTabToDatabase(tabData) {
@@ -281,8 +205,7 @@ async function initPopup() {
       favEl.src = favicon;
     }
 
-    // Populate categories
-    await populateCategories(tab);
+
 
   } catch (error) {
     console.error('Failed to load tab info:', error);
@@ -293,31 +216,7 @@ async function initPopup() {
 // Event listeners
 document.addEventListener('DOMContentLoaded', initPopup);
 
-// Add visibility change listener to refresh categories when popup becomes visible
-document.addEventListener('visibilitychange', async () => {
-  if (!document.hidden && config.dashboardUrl && config.userEmail) {
-    // Popup became visible, refresh categories if already configured
-    try {
-      const tab = await getCurrentTab();
-      await populateCategories(tab);
-    } catch (error) {
-      console.error('Failed to refresh categories:', error);
-    }
-  }
-});
 
-// Add focus listener as additional refresh trigger
-window.addEventListener('focus', async () => {
-  if (config.dashboardUrl && config.userEmail) {
-    // Extension popup got focus, refresh categories
-    try {
-      const tab = await getCurrentTab();
-      await populateCategories(tab);
-    } catch (error) {
-      console.error('Failed to refresh categories on focus:', error);
-    }
-  }
-});
 
 // Save configuration
 document.getElementById('saveConfig')?.addEventListener('click', async () => {
@@ -375,35 +274,7 @@ document.getElementById('openDashboard')?.addEventListener('click', () => {
   }
 });
 
-// Refresh categories button
-document.getElementById('refreshCategories')?.addEventListener('click', async () => {
-  const refreshBtn = document.getElementById('refreshCategories');
-  const originalText = refreshBtn.innerHTML;
-  
-  try {
-    // Show loading state
-    refreshBtn.innerHTML = '⏳';
-    refreshBtn.disabled = true;
-    
-    // Refresh categories
-    const tab = await getCurrentTab();
-    await populateCategories(tab, true);
-    
-    // Show success
-    refreshBtn.innerHTML = '✓';
-    setTimeout(() => {
-      refreshBtn.innerHTML = originalText;
-      refreshBtn.disabled = false;
-    }, 1000);
-  } catch (error) {
-    console.error('Failed to refresh categories:', error);
-    refreshBtn.innerHTML = '❌';
-    setTimeout(() => {
-      refreshBtn.innerHTML = originalText;
-      refreshBtn.disabled = false;
-    }, 2000);
-  }
-});
+
 
 // Save tab
 document.getElementById('saveTab')?.addEventListener('click', async () => {
@@ -417,13 +288,12 @@ document.getElementById('saveTab')?.addEventListener('click', async () => {
 
     const tab = await getCurrentTab();
     const titleInput = document.querySelector('.tab-title-input');
-    const category = document.getElementById('category').value;
     const description = document.getElementById('description').value.trim();
 
     const tabData = {
       url: tab.url,
       title: titleInput ? titleInput.value.trim() : (tab.title || 'Untitled'),
-      category,
+      category: 'Recently Added', // Always use 'Recently Added' category
       description: description || null,
       favicon: getFaviconUrl(tab.url),
       created_at: new Date().toISOString()

@@ -174,6 +174,9 @@ const Dashboard: React.FC = () => {
     setFilteredWebsites(filtered);
   };
 
+  // Calculate 'Recently Added' count
+  const recentlyAddedCount = websites.filter(website => website.category === 'Recently Added').length;
+
   const handleDeleteWebsite = async (id: string) => {
     try {
       const { error } = await supabase
@@ -257,6 +260,7 @@ const Dashboard: React.FC = () => {
               onCategorySelect={setSelectedCategory}
               totalWebsites={websites.length}
               onCategoryChange={handleCategoryChange}
+              recentlyAddedCount={recentlyAddedCount}
             />
             
             <button

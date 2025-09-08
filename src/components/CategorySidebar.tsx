@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Folder, FolderOpen, Hash, Settings } from 'lucide-react';
+import { Folder, FolderOpen, Hash, Settings, Clock } from 'lucide-react';
 import type { Category } from '../types';
 import CategoryManagement from './CategoryManagement';
 
@@ -9,6 +9,7 @@ interface CategorySidebarProps {
   onCategorySelect: (category: string) => void;
   totalWebsites: number;
   onCategoryChange: () => void;
+  recentlyAddedCount: number;
 }
 
 const CategorySidebar: React.FC<CategorySidebarProps> = ({
@@ -17,6 +18,7 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
   onCategorySelect,
   totalWebsites,
   onCategoryChange,
+  recentlyAddedCount,
 }) => {
   const [showManagement, setShowManagement] = useState(false);
   return (
@@ -45,6 +47,37 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
           </div>
           <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-full">
             {totalWebsites}
+          </span>
+        </button>
+        
+        {/* Recently Added - Special System Category */}
+        <button
+          onClick={() => onCategorySelect('Recently Added')}
+          className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center justify-between ${
+            selectedCategory === 'Recently Added'
+              ? 'bg-orange-100 text-orange-700 font-medium border border-orange-200'
+              : 'text-gray-700 hover:bg-gray-100'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {selectedCategory === 'Recently Added' ? (
+              <Clock className="h-4 w-4 text-orange-600" />
+            ) : (
+              <Clock className="h-4 w-4 text-orange-500" />
+            )}
+            <span className="font-medium">Recently Added</span>
+            {recentlyAddedCount > 0 && (
+              <span className="text-xs bg-orange-200 text-orange-700 px-1.5 py-0.5 rounded-full ml-1">
+                New!
+              </span>
+            )}
+          </div>
+          <span className={`text-xs px-2 py-1 rounded-full ${
+            selectedCategory === 'Recently Added'
+              ? 'bg-orange-200 text-orange-700'
+              : 'bg-gray-200 text-gray-600'
+          }`}>
+            {recentlyAddedCount}
           </span>
         </button>
         
