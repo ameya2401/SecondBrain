@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ExternalLink, X, Clock, Globe } from 'lucide-react';
 import { formatDistanceToNow, differenceInDays } from 'date-fns';
+import { useTheme } from '../contexts/ThemeContext';
 import type { Website } from '../types';
 
 interface ReminderModalProps {
@@ -18,6 +19,7 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
   onCheckLater,
   onDismiss
 }) => {
+  const { isDarkMode } = useTheme();
   const [isProcessing, setIsProcessing] = useState(false);
   
   if (!isOpen) return null;
@@ -54,17 +56,27 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+      <div className={`rounded-lg shadow-xl max-w-md w-full transition-colors duration-300 ${
+        isDarkMode ? 'bg-gray-800' : 'bg-white'
+      }`}>
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className={`flex items-center justify-between p-6 border-b transition-colors duration-300 ${
+          isDarkMode ? 'border-gray-700' : 'border-gray-200'
+        }`}>
           <div className="flex items-center gap-3">
             <Clock className="h-6 w-6 text-blue-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Reminder</h2>
+            <h2 className={`text-lg font-semibold transition-colors duration-300 ${
+              isDarkMode ? 'text-white' : 'text-gray-900'
+            }`}>Reminder</h2>
           </div>
           <button
             onClick={handleDismiss}
             disabled={isProcessing}
-            className="p-1 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
+            className={`p-1 transition-colors disabled:opacity-50 ${
+              isDarkMode 
+                ? 'text-gray-400 hover:text-gray-200' 
+                : 'text-gray-400 hover:text-gray-600'
+            }`}
             title="Don't remind me about this website again"
           >
             {isProcessing ? (
@@ -89,31 +101,49 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
                 }}
               />
             ) : (
-              <div className="w-10 h-10 bg-gray-100 rounded flex items-center justify-center flex-shrink-0">
-                <Globe className="h-5 w-5 text-gray-400" />
+              <div className={`w-10 h-10 rounded flex items-center justify-center flex-shrink-0 transition-colors duration-300 ${
+                isDarkMode ? 'bg-gray-700' : 'bg-gray-100'
+              }`}>
+                <Globe className={`h-5 w-5 transition-colors duration-300 ${
+                  isDarkMode ? 'text-gray-400' : 'text-gray-400'
+                }`} />
               </div>
             )}
             
             <div className="flex-1 min-w-0">
-              <h3 className="font-medium text-gray-900 mb-1 line-clamp-2">
+              <h3 className={`font-medium mb-1 line-clamp-2 transition-colors duration-300 ${
+                isDarkMode ? 'text-white' : 'text-gray-900'
+              }`}>
                 {website.title}
               </h3>
-              <p className="text-sm text-gray-500 truncate mb-2">
+              <p className={`text-sm truncate mb-2 transition-colors duration-300 ${
+                isDarkMode ? 'text-gray-400' : 'text-gray-500'
+              }`}>
                 {website.url}
               </p>
               {website.description && (
-                <p className="text-sm text-gray-600 line-clamp-2">
+                <p className={`text-sm line-clamp-2 transition-colors duration-300 ${
+                  isDarkMode ? 'text-gray-300' : 'text-gray-600'
+                }`}>
                   {website.description}
                 </p>
               )}
             </div>
           </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <p className="text-blue-800 text-sm">
+          <div className={`border rounded-lg p-4 mb-6 transition-colors duration-300 ${
+            isDarkMode 
+              ? 'bg-blue-900/20 border-blue-700' 
+              : 'bg-blue-50 border-blue-200'
+          }`}>
+            <p className={`text-sm transition-colors duration-300 ${
+              isDarkMode ? 'text-blue-300' : 'text-blue-800'
+            }`}>
               <strong>{website.title}</strong> was added {timeAgo}
               {daysAgo >= 3 && (
-                <span className="text-blue-600"> ({daysAgo} days ago)</span>
+                <span className={`transition-colors duration-300 ${
+                  isDarkMode ? 'text-blue-400' : 'text-blue-600'
+                }`}> ({daysAgo} days ago)</span>
               )}.
               Would you like to check it out?
             </p>
@@ -136,13 +166,19 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
             <button
               onClick={handleCheckLater}
               disabled={isProcessing}
-              className="flex-1 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors font-medium disabled:opacity-50"
+              className={`flex-1 px-4 py-2 rounded-lg transition-colors font-medium disabled:opacity-50 ${
+                isDarkMode 
+                  ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
             >
               {isProcessing ? 'Saving...' : 'Check Later'}
             </button>
           </div>
 
-          <p className="text-xs text-gray-500 text-center mt-3">
+          <p className={`text-xs text-center mt-3 transition-colors duration-300 ${
+            isDarkMode ? 'text-gray-400' : 'text-gray-500'
+          }`}>
             Click the × to stop reminders for this website
           </p>
         </div>

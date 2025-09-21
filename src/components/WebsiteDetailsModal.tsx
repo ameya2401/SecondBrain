@@ -4,6 +4,7 @@ import { formatDistanceToNow, format, differenceInDays } from 'date-fns';
 import { supabase } from '../lib/supabase';
 import { checkReminderMigration } from '../lib/reminderMigration';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import toast from 'react-hot-toast';
 import type { Website } from '../types';
 
@@ -23,6 +24,7 @@ const WebsiteDetailsModal: React.FC<WebsiteDetailsModalProps> = ({
   categories
 }) => {
   const { user } = useAuth();
+  const { isDarkMode } = useTheme();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [reminderMigrationExists, setReminderMigrationExists] = useState(true);
@@ -137,9 +139,13 @@ const WebsiteDetailsModal: React.FC<WebsiteDetailsModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className={`rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto transition-colors duration-300 ${
+        isDarkMode ? 'bg-gray-800' : 'bg-white'
+      }`}>
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className={`flex items-center justify-between p-6 border-b transition-colors duration-300 ${
+          isDarkMode ? 'border-gray-700' : 'border-gray-200'
+        }`}>
           <div className="flex items-center gap-3">
             {website.favicon || getFaviconUrl(website.url) ? (
               <img
@@ -152,18 +158,28 @@ const WebsiteDetailsModal: React.FC<WebsiteDetailsModalProps> = ({
                 }}
               />
             ) : (
-              <div className="w-8 h-8 bg-gray-100 rounded flex items-center justify-center">
-                <Globe className="h-5 w-5 text-gray-400" />
+              <div className={`w-8 h-8 rounded flex items-center justify-center transition-colors duration-300 ${
+                isDarkMode ? 'bg-gray-700' : 'bg-gray-100'
+              }`}>
+                <Globe className={`h-5 w-5 transition-colors duration-300 ${
+                  isDarkMode ? 'text-gray-400' : 'text-gray-400'
+                }`} />
               </div>
             )}
-            <h2 className="text-xl font-semibold text-gray-900">Website Details</h2>
+            <h2 className={`text-xl font-semibold transition-colors duration-300 ${
+              isDarkMode ? 'text-white' : 'text-gray-900'
+            }`}>Website Details</h2>
           </div>
           
           <div className="flex items-center gap-2">
             {!isEditing && (
               <button
                 onClick={() => setIsEditing(true)}
-                className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                className={`p-2 transition-colors ${
+                  isDarkMode 
+                    ? 'text-gray-400 hover:text-blue-400' 
+                    : 'text-gray-400 hover:text-blue-600'
+                }`}
                 title="Edit website"
               >
                 <Edit2 className="h-5 w-5" />
@@ -171,7 +187,11 @@ const WebsiteDetailsModal: React.FC<WebsiteDetailsModalProps> = ({
             )}
             <button
               onClick={onClose}
-              className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+              className={`p-2 transition-colors ${
+                isDarkMode 
+                  ? 'text-gray-400 hover:text-gray-200' 
+                  : 'text-gray-400 hover:text-gray-600'
+              }`}
             >
               <X className="h-5 w-5" />
             </button>
@@ -182,30 +202,46 @@ const WebsiteDetailsModal: React.FC<WebsiteDetailsModalProps> = ({
         <div className="p-6 space-y-6">
           {/* Title */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
+            <label className={`block text-sm font-medium mb-2 transition-colors duration-300 ${
+              isDarkMode ? 'text-gray-300' : 'text-gray-700'
+            }`}>Title</label>
             {isEditing ? (
               <input
                 type="text"
                 value={editData.title}
                 onChange={(e) => setEditData(prev => ({ ...prev, title: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-300 ${
+                  isDarkMode 
+                    ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' 
+                    : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'
+                }`}
                 placeholder="Website title"
               />
             ) : (
-              <p className="text-gray-900 text-lg font-medium">{website.title}</p>
+              <p className={`text-lg font-medium transition-colors duration-300 ${
+                isDarkMode ? 'text-white' : 'text-gray-900'
+              }`}>{website.title}</p>
             )}
           </div>
 
           {/* URL */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">URL</label>
+            <label className={`block text-sm font-medium mb-2 transition-colors duration-300 ${
+              isDarkMode ? 'text-gray-300' : 'text-gray-700'
+            }`}>URL</label>
             <div className="flex items-center gap-2">
-              <p className="text-gray-600 flex-1 break-all">{website.url}</p>
+              <p className={`flex-1 break-all transition-colors duration-300 ${
+                isDarkMode ? 'text-gray-300' : 'text-gray-600'
+              }`}>{website.url}</p>
               <a
                 href={website.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                className={`p-2 transition-colors ${
+                  isDarkMode 
+                    ? 'text-gray-400 hover:text-blue-400' 
+                    : 'text-gray-400 hover:text-blue-600'
+                }`}
                 title="Open in new tab"
               >
                 <ExternalLink className="h-4 w-4" />
@@ -215,12 +251,18 @@ const WebsiteDetailsModal: React.FC<WebsiteDetailsModalProps> = ({
 
           {/* Category */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+            <label className={`block text-sm font-medium mb-2 transition-colors duration-300 ${
+              isDarkMode ? 'text-gray-300' : 'text-gray-700'
+            }`}>Category</label>
             {isEditing ? (
               <select
                 value={editData.category}
                 onChange={(e) => setEditData(prev => ({ ...prev, category: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-300 ${
+                  isDarkMode 
+                    ? 'border-gray-600 bg-gray-700 text-white' 
+                    : 'border-gray-300 bg-white text-gray-900'
+                }`}
               >
                 <option value="Uncategorized">Uncategorized</option>
                 {categories.map((category) => (
@@ -230,7 +272,11 @@ const WebsiteDetailsModal: React.FC<WebsiteDetailsModalProps> = ({
                 ))}
               </select>
             ) : (
-              <span className="inline-flex px-3 py-1 text-sm font-medium bg-blue-100 text-blue-800 rounded-full">
+              <span className={`inline-flex px-3 py-1 text-sm font-medium rounded-full transition-colors duration-300 ${
+                isDarkMode 
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-blue-100 text-blue-800'
+              }`}>
                 {website.category}
               </span>
             )}
@@ -238,49 +284,71 @@ const WebsiteDetailsModal: React.FC<WebsiteDetailsModalProps> = ({
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+            <label className={`block text-sm font-medium mb-2 transition-colors duration-300 ${
+              isDarkMode ? 'text-gray-300' : 'text-gray-700'
+            }`}>Description</label>
             {isEditing ? (
               <textarea
                 value={editData.description}
                 onChange={(e) => setEditData(prev => ({ ...prev, description: e.target.value }))}
                 rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-300 ${
+                  isDarkMode 
+                    ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' 
+                    : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'
+                }`}
                 placeholder="Add a description or notes about this website..."
               />
             ) : (
-              <p className="text-gray-600">
+              <p className={`transition-colors duration-300 ${
+                isDarkMode ? 'text-gray-300' : 'text-gray-600'
+              }`}>
                 {website.description || (
-                  <span className="italic text-gray-400">No description added</span>
+                  <span className={`italic transition-colors duration-300 ${
+                    isDarkMode ? 'text-gray-500' : 'text-gray-400'
+                  }`}>No description added</span>
                 )}
               </p>
             )}
           </div>
 
           {/* Metadata */}
-          <div className="border-t border-gray-200 pt-4">
+          <div className={`border-t pt-4 transition-colors duration-300 ${
+            isDarkMode ? 'border-gray-700' : 'border-gray-200'
+          }`}>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-              <div className="flex items-center gap-2 text-gray-600">
+              <div className={`flex items-center gap-2 transition-colors duration-300 ${
+                isDarkMode ? 'text-gray-300' : 'text-gray-600'
+              }`}>
                 <Calendar className="h-4 w-4" />
                 <span>
                   Added {formatDistanceToNow(new Date(website.created_at), { addSuffix: true })}
                 </span>
               </div>
-              <div className="text-gray-500">
+              <div className={`transition-colors duration-300 ${
+                isDarkMode ? 'text-gray-400' : 'text-gray-500'
+              }`}>
                 {format(new Date(website.created_at), 'MMM d, yyyy \'at\' h:mm a')}
               </div>
             </div>
             
             {/* Reminder Status */}
             {reminderMigrationExists && (
-              <div className="mt-4 pt-4 border-t border-gray-100">
+              <div className={`mt-4 pt-4 border-t transition-colors duration-300 ${
+                isDarkMode ? 'border-gray-600' : 'border-gray-100'
+              }`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     {website.reminder_dismissed ? (
-                      <BellOff className="h-4 w-4 text-gray-400" />
+                      <BellOff className={`h-4 w-4 transition-colors duration-300 ${
+                        isDarkMode ? 'text-gray-400' : 'text-gray-400'
+                      }`} />
                     ) : (
                       <Bell className="h-4 w-4 text-blue-600" />
                     )}
-                    <span className="text-sm font-medium text-gray-700">
+                    <span className={`text-sm font-medium transition-colors duration-300 ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                    }`}>
                       {website.reminder_dismissed ? 'Reminders Disabled' : 'Reminders Enabled'}
                     </span>
                   </div>
@@ -288,15 +356,21 @@ const WebsiteDetailsModal: React.FC<WebsiteDetailsModalProps> = ({
                     onClick={handleToggleReminders}
                     className={`text-xs px-3 py-1 rounded-full transition-colors ${
                       website.reminder_dismissed
-                        ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                        : 'bg-red-100 text-red-700 hover:bg-red-200'
+                        ? isDarkMode
+                          ? 'bg-green-600 text-white hover:bg-green-500'
+                          : 'bg-green-100 text-green-700 hover:bg-green-200'
+                        : isDarkMode
+                          ? 'bg-red-600 text-white hover:bg-red-500'
+                          : 'bg-red-100 text-red-700 hover:bg-red-200'
                     }`}
                   >
                     {website.reminder_dismissed ? 'Enable' : 'Disable'}
                   </button>
                 </div>
                 {!website.reminder_dismissed && (
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className={`text-xs mt-1 transition-colors duration-300 ${
+                    isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                  }`}>
                     {differenceInDays(new Date(), new Date(website.created_at)) >= 3
                       ? 'This website is eligible for reminders'
                       : `Reminders will start in ${3 - differenceInDays(new Date(), new Date(website.created_at))} day(s)`
@@ -310,11 +384,19 @@ const WebsiteDetailsModal: React.FC<WebsiteDetailsModalProps> = ({
 
         {/* Footer */}
         {isEditing && (
-          <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
+          <div className={`flex items-center justify-end gap-3 p-6 border-t transition-colors duration-300 ${
+            isDarkMode 
+              ? 'border-gray-700 bg-gray-750' 
+              : 'border-gray-200 bg-gray-50'
+          }`}>
             <button
               onClick={handleCancel}
               disabled={isSaving}
-              className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+              className={`px-4 py-2 border rounded-lg transition-colors disabled:opacity-50 ${
+                isDarkMode 
+                  ? 'text-gray-200 border-gray-600 hover:bg-gray-700' 
+                  : 'text-gray-700 border-gray-300 hover:bg-gray-50'
+              }`}
             >
               Cancel
             </button>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Folder, FolderOpen, Hash, Settings, Clock } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
 import type { Category } from '../types';
 import CategoryManagement from './CategoryManagement';
 
@@ -20,10 +21,17 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
   onCategoryChange,
   recentlyAddedCount,
 }) => {
+  const { isDarkMode } = useTheme();
   const [showManagement, setShowManagement] = useState(false);
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-      <h2 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+    <div className={`rounded-lg shadow-sm border p-4 transition-colors duration-300 ${
+      isDarkMode 
+        ? 'bg-gray-800 border-gray-700' 
+        : 'bg-white border-gray-200'
+    }`}>
+      <h2 className={`font-semibold mb-4 flex items-center gap-2 transition-colors duration-300 ${
+        isDarkMode ? 'text-white' : 'text-gray-900'
+      }`}>
         <Folder className="h-4 w-4" />
         Categories
       </h2>
@@ -33,8 +41,12 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
           onClick={() => onCategorySelect('all')}
           className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center justify-between ${
             selectedCategory === 'all'
-              ? 'bg-blue-100 text-blue-700 font-medium'
-              : 'text-gray-700 hover:bg-gray-100'
+              ? isDarkMode
+                ? 'bg-blue-600 text-white font-medium'
+                : 'bg-blue-100 text-blue-700 font-medium'
+              : isDarkMode
+                ? 'text-gray-300 hover:bg-gray-700'
+                : 'text-gray-700 hover:bg-gray-100'
           }`}
         >
           <div className="flex items-center gap-2">
