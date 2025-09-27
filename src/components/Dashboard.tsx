@@ -16,6 +16,97 @@ import { LogOut, Plus, Grid, List } from 'lucide-react';
 import { signOut } from '../lib/supabase';
 import toast from 'react-hot-toast';
 
+// Enhanced search function that handles flexible text matching
+const enhancedTextSearch = (query: string, websites: Website[]): Website[] => {
+  if (!query.trim()) return websites;
+  
+  const searchTerms = query.toLowerCase().trim().split(/\s+/);
+  
+  return websites.filter(website => {
+    const searchableText = [
+      website.title || '',
+      website.url || '',
+      website.category || '',
+      website.description || ''
+    ].join(' ').toLowerCase();
+    
+    // Remove spaces and special characters for flexible matching
+    const normalizedSearchableText = searchableText.replace(/[\s\-_\.]/g, '');
+    const normalizedQuery = query.toLowerCase().replace(/[\s\-_\.]/g, '');
+    
+    // Score the match quality
+    let score = 0;
+    
+    // 1. Exact phrase match (highest score)
+    if (searchableText.includes(query.toLowerCase())) {
+      score += 100;
+    }
+    
+    // 2. Normalized match (handles space differences)
+    if (normalizedSearchableText.includes(normalizedQuery)) {
+      score += 80;
+    }
+    
+    // 3. All search terms present (partial match)
+    const allTermsPresent = searchTerms.every(term => 
+      searchableText.includes(term) || normalizedSearchableText.includes(term.replace(/[\s\-_\.]/g, ''))
+    );
+    if (allTermsPresent) {
+      score += 60;
+    }
+    
+    // 4. Any search term present (loose match)
+    const anyTermPresent = searchTerms.some(term => 
+      searchableText.includes(term) || normalizedSearchableText.includes(term.replace(/[\s\-_\.]/g, ''))
+    );
+    if (anyTermPresent) {
+      score += 20;
+    }
+    
+    // 5. Bonus for title matches
+    const titleText = (website.title || '').toLowerCase();
+    const normalizedTitle = titleText.replace(/[\s\-_\.]/g, '');
+    if (titleText.includes(query.toLowerCase()) || normalizedTitle.includes(normalizedQuery)) {
+      score += 30;
+    }
+    
+    return score > 0;
+  }).sort((a, b) => {
+    // Calculate scores for sorting
+    const getScore = (website: Website) => {
+      const searchableText = [
+        website.title || '',
+        website.url || '',
+        website.category || '',
+        website.description || ''
+      ].join(' ').toLowerCase();
+      
+      const normalizedSearchableText = searchableText.replace(/[\s\-_\.]/g, '');
+      const normalizedQuery = query.toLowerCase().replace(/[\s\-_\.]/g, '');
+      
+      let score = 0;
+      
+      if (searchableText.includes(query.toLowerCase())) score += 100;
+      if (normalizedSearchableText.includes(normalizedQuery)) score += 80;
+      
+      const allTermsPresent = searchTerms.every(term => 
+        searchableText.includes(term) || normalizedSearchableText.includes(term.replace(/[\s\-_\.]/g, ''))
+      );
+      if (allTermsPresent) score += 60;
+      
+      const titleText = (website.title || '').toLowerCase();
+      const normalizedTitle = titleText.replace(/[\s\-_\.]/g, '');
+      if (titleText.includes(query.toLowerCase()) || normalizedTitle.includes(normalizedQuery)) {
+        score += 30;
+      }
+      
+      return score;
+    };
+    
+    return getScore(b) - getScore(a); // Sort by score descending
+  });
+};
+
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const { isDarkMode } = useTheme();
@@ -151,26 +242,14 @@ const Dashboard: React.FC = () => {
           filtered = await searchWebsitesWithAI(aiQuery, filtered);
         } catch (error) {
           console.error('AI search failed:', error);
-          // Fallback to text search
-          const searchTerm = searchQuery.toLowerCase();
-          filtered = filtered.filter(website => 
-            website.title.toLowerCase().includes(searchTerm) ||
-            website.url.toLowerCase().includes(searchTerm) ||
-            website.category.toLowerCase().includes(searchTerm) ||
-            (website.description && website.description.toLowerCase().includes(searchTerm))
-          );
+          // Fallback to enhanced text search
+          filtered = enhancedTextSearch(searchQuery, filtered);
         } finally {
           setIsSearchingAI(false);
         }
       } else {
-        // Regular text search
-        const searchTerm = searchQuery.toLowerCase();
-        filtered = filtered.filter(website => 
-          website.title.toLowerCase().includes(searchTerm) ||
-          website.url.toLowerCase().includes(searchTerm) ||
-          website.category.toLowerCase().includes(searchTerm) ||
-          (website.description && website.description.toLowerCase().includes(searchTerm))
-        );
+        // Enhanced text search
+        filtered = enhancedTextSearch(searchQuery, filtered);
       }
     }
 
