@@ -1,6 +1,6 @@
-# SecondBrain Chrome Extension
+# Memorai Chrome Extension
 
-This Chrome extension allows you to save websites directly to your SecondBrain dashboard deployed on Vercel.
+This Chrome extension allows you to save websites directly to your Memorai dashboard deployed on Vercel.
 
 ## Features
 
@@ -15,15 +15,15 @@ This Chrome extension allows you to save websites directly to your SecondBrain d
 1. Open Chrome and go to `chrome://extensions/`
 2. Enable "Developer mode" in the top right
 3. Click "Load unpacked" and select the `extension` folder
-4. The SecondBrain extension will appear in your browser toolbar
+4. The Memorai extension will appear in your browser toolbar
 
 ## Configuration
 
 When you first use the extension, you'll need to configure:
 
 1. **Dashboard URL**: Your Vercel deployment URL (e.g., `https://your-app.vercel.app`)
-2. **Account Email**: The email you use to login to your SecondBrain dashboard
-3. **Account Password**: Your SecondBrain dashboard password
+2. **Account Email**: The email you use to login to your Memorai dashboard
+3. **Account Password**: Your Memorai dashboard password
 4. **Extension Secret** (optional): Only needed if you've set up additional security
 
 **Important**: Your credentials are stored locally in the extension and used only to authenticate with your own dashboard.
@@ -31,7 +31,7 @@ When you first use the extension, you'll need to configure:
 ## Usage
 
 1. Navigate to any website you want to save
-2. Click the SecondBrain extension icon
+2. Click the Memorai extension icon
 3. Edit the title if needed (it's automatically filled but editable)
 4. Select or confirm the category
 5. Add optional notes/description

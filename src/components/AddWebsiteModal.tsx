@@ -71,42 +71,56 @@ const AddWebsiteModal: React.FC<AddWebsiteModalProps> = ({
 
   if (!isOpen) return null;
 
+  // Handle click outside to close
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    // Only close if clicking the backdrop, not the modal content
+    if (e.target === e.currentTarget) {
+      handleClose();
+    }
+  };
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className={`rounded-lg shadow-xl w-full max-w-md transition-colors duration-300 ${
-        isDarkMode ? 'bg-gray-800' : 'bg-white'
+    <div 
+      className={`fixed inset-0 flex items-center justify-center p-4 z-50 ${
+        isDarkMode ? 'bg-black bg-opacity-80' : 'bg-white bg-opacity-80'
+      }`}
+      onClick={handleBackdropClick}
+      style={{ fontFamily: "'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}
+    >
+      <div className={`border rounded-lg w-full max-w-md transition-colors duration-300 ${
+        isDarkMode ? 'bg-[#191919] border-[#2e2e2e]' : 'bg-white border-[#e9e9e9]'
       }`}>
-        <div className={`flex items-center justify-between p-6 border-b transition-colors duration-300 ${
-          isDarkMode ? 'border-gray-700' : 'border-gray-200'
+        <div className={`flex items-center justify-between p-4 border-b transition-colors duration-300 ${
+          isDarkMode ? 'border-[#2e2e2e]' : 'border-[#e9e9e9]'
         }`}>
-          <h2 className={`text-lg font-semibold flex items-center gap-2 transition-colors duration-300 ${
-            isDarkMode ? 'text-white' : 'text-gray-900'
+          <h2 className={`text-sm font-medium flex items-center gap-2 transition-colors duration-300 ${
+            isDarkMode ? 'text-[#e9e9e9]' : 'text-[#37352f]'
           }`}>
-            <Plus className="h-5 w-5" />
+            <Plus className="h-3.5 w-3.5" />
             Add Website
           </h2>
           <button
             onClick={handleClose}
-            className={`transition-colors ${
+            className={`rounded transition-all duration-150 ${
               isDarkMode 
-                ? 'text-gray-400 hover:text-gray-200' 
-                : 'text-gray-400 hover:text-gray-600'
+                ? 'text-[#787774] hover:text-[#e9e9e9] hover:bg-[#2e2e2e]' 
+                : 'text-[#787774] hover:text-[#37352f] hover:bg-[#f1f1ef]'
             }`}
           >
-            <X className="h-5 w-5" />
+            <X className="h-3.5 w-3.5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-4 space-y-4">
           <div>
             <label htmlFor="url" className={`block text-sm font-medium mb-1 transition-colors duration-300 ${
-              isDarkMode ? 'text-gray-300' : 'text-gray-700'
+              isDarkMode ? 'text-[#c9c9c9]' : 'text-[#787774]'
             }`}>
               URL *
             </label>
             <div className="relative">
-              <Link className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 transition-colors duration-300 ${
-                isDarkMode ? 'text-gray-400' : 'text-gray-400'
+              <Link className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 transition-colors duration-300 ${
+                isDarkMode ? 'text-[#787774]' : 'text-[#787774]'
               }`} />
               <input
                 id="url"
@@ -115,10 +129,10 @@ const AddWebsiteModal: React.FC<AddWebsiteModalProps> = ({
                 onChange={(e) => setUrl(e.target.value)}
                 required
                 placeholder="https://example.com"
-                className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-300 ${
+                className={`w-full pl-10 pr-3 py-1.5 border rounded-lg font-normal text-sm focus:outline-none transition-colors duration-300 ${
                   isDarkMode 
-                    ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' 
-                    : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'
+                    ? 'border-[#2e2e2e] bg-[#191919] text-[#e9e9e9] placeholder-[#787774] focus:border-[#3e3e3e]' 
+                    : 'border-[#e9e9e9] bg-white text-[#37352f] placeholder-[#9b9a97] focus:border-[#c9c9c9]'
                 }`}
               />
             </div>
@@ -126,13 +140,13 @@ const AddWebsiteModal: React.FC<AddWebsiteModalProps> = ({
 
           <div>
             <label htmlFor="title" className={`block text-sm font-medium mb-1 transition-colors duration-300 ${
-              isDarkMode ? 'text-gray-300' : 'text-gray-700'
+              isDarkMode ? 'text-[#c9c9c9]' : 'text-[#787774]'
             }`}>
               Title
             </label>
             <div className="relative">
-              <Globe className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 transition-colors duration-300 ${
-                isDarkMode ? 'text-gray-400' : 'text-gray-400'
+              <Globe className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 transition-colors duration-300 ${
+                isDarkMode ? 'text-[#787774]' : 'text-[#787774]'
               }`} />
               <input
                 id="title"
@@ -140,10 +154,10 @@ const AddWebsiteModal: React.FC<AddWebsiteModalProps> = ({
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Website title (optional)"
-                className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-300 ${
+                className={`w-full pl-10 pr-3 py-1.5 border rounded-lg font-normal text-sm focus:outline-none transition-colors duration-300 ${
                   isDarkMode 
-                    ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' 
-                    : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'
+                    ? 'border-[#2e2e2e] bg-[#191919] text-[#e9e9e9] placeholder-[#787774] focus:border-[#3e3e3e]' 
+                    : 'border-[#e9e9e9] bg-white text-[#37352f] placeholder-[#9b9a97] focus:border-[#c9c9c9]'
                 }`}
               />
             </div>
@@ -151,13 +165,13 @@ const AddWebsiteModal: React.FC<AddWebsiteModalProps> = ({
 
           <div>
             <label htmlFor="category" className={`block text-sm font-medium mb-1 transition-colors duration-300 ${
-              isDarkMode ? 'text-gray-300' : 'text-gray-700'
+              isDarkMode ? 'text-[#c9c9c9]' : 'text-[#787774]'
             }`}>
               Category
             </label>
             <div className="relative">
-              <Tag className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 transition-colors duration-300 ${
-                isDarkMode ? 'text-gray-400' : 'text-gray-400'
+              <Tag className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 transition-colors duration-300 ${
+                isDarkMode ? 'text-[#787774]' : 'text-[#787774]'
               }`} />
               <input
                 id="category"
@@ -166,10 +180,10 @@ const AddWebsiteModal: React.FC<AddWebsiteModalProps> = ({
                 onChange={(e) => setCategory(e.target.value)}
                 list="categories"
                 placeholder="e.g., AI Tools, Job Portals, Blogs"
-                className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-300 ${
+                className={`w-full pl-10 pr-3 py-1.5 border rounded-lg font-normal text-sm focus:outline-none transition-colors duration-300 ${
                   isDarkMode 
-                    ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' 
-                    : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'
+                    ? 'border-[#2e2e2e] bg-[#191919] text-[#e9e9e9] placeholder-[#787774] focus:border-[#3e3e3e]' 
+                    : 'border-[#e9e9e9] bg-white text-[#37352f] placeholder-[#9b9a97] focus:border-[#c9c9c9]'
                 }`}
               />
               <datalist id="categories">
@@ -182,13 +196,13 @@ const AddWebsiteModal: React.FC<AddWebsiteModalProps> = ({
 
           <div>
             <label htmlFor="description" className={`block text-sm font-medium mb-1 transition-colors duration-300 ${
-              isDarkMode ? 'text-gray-300' : 'text-gray-700'
+              isDarkMode ? 'text-[#c9c9c9]' : 'text-[#787774]'
             }`}>
               Description
             </label>
             <div className="relative">
-              <FileText className={`absolute left-3 top-3 h-4 w-4 transition-colors duration-300 ${
-                isDarkMode ? 'text-gray-400' : 'text-gray-400'
+              <FileText className={`absolute left-3 top-3 h-3.5 w-3.5 transition-colors duration-300 ${
+                isDarkMode ? 'text-[#787774]' : 'text-[#787774]'
               }`} />
               <textarea
                 id="description"
@@ -196,23 +210,23 @@ const AddWebsiteModal: React.FC<AddWebsiteModalProps> = ({
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Add a note about this website..."
                 rows={3}
-                className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-colors duration-300 ${
+                className={`w-full pl-10 pr-3 py-2 border rounded-lg font-normal text-sm focus:outline-none resize-none transition-colors duration-300 ${
                   isDarkMode 
-                    ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' 
-                    : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'
+                    ? 'border-[#2e2e2e] bg-[#191919] text-[#e9e9e9] placeholder-[#787774] focus:border-[#3e3e3e]' 
+                    : 'border-[#e9e9e9] bg-white text-[#37352f] placeholder-[#9b9a97] focus:border-[#c9c9c9]'
                 }`}
               />
             </div>
           </div>
 
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-2 pt-4">
             <button
               type="button"
               onClick={handleClose}
-              className={`flex-1 px-4 py-2 rounded-lg transition-colors font-medium ${
+              className={`flex-1 px-2 py-1.5 border rounded-lg transition-all duration-150 text-sm font-normal ${
                 isDarkMode 
-                  ? 'text-gray-200 bg-gray-700 hover:bg-gray-600' 
-                  : 'text-gray-700 bg-gray-100 hover:bg-gray-200'
+                  ? 'text-[#787774] border-[#2e2e2e] hover:text-[#e9e9e9] hover:bg-[#2e2e2e]' 
+                  : 'text-[#787774] border-[#e9e9e9] hover:text-[#37352f] hover:bg-[#f1f1ef]'
               }`}
             >
               Cancel
@@ -220,7 +234,11 @@ const AddWebsiteModal: React.FC<AddWebsiteModalProps> = ({
             <button
               type="submit"
               disabled={loading || !url.trim()}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+              className={`flex-1 px-2 py-1.5 border rounded-lg transition-all duration-150 text-sm font-normal disabled:opacity-50 disabled:cursor-not-allowed ${
+                isDarkMode 
+                  ? 'bg-[#2e2e2e] text-[#e9e9e9] border-[#2e2e2e] hover:bg-[#3e3e3e]'
+                  : 'bg-[#f1f1ef] text-[#37352f] border-[#e9e9e9] hover:bg-[#e9e9e9]'
+              }`}
             >
               {loading ? 'Adding...' : 'Add Website'}
             </button>

@@ -11,6 +11,7 @@ import CategorySidebar from './CategorySidebar';
 import AddWebsiteModal from './AddWebsiteModal';
 import WebsiteDetailsModal from './WebsiteDetailsModal';
 import ReminderModal from './ReminderModal';
+import RemindersPanel from './RemindersPanel';
 import ThemeToggle from './ThemeToggle';
 import { LogOut, Plus, Grid, List } from 'lucide-react';
 import { signOut } from '../lib/supabase';
@@ -139,7 +140,9 @@ const Dashboard: React.FC = () => {
     showReminder,
     handleOpenWebsite,
     handleCheckLater,
-    handleDismissReminder
+    handleDismissReminder,
+    getPendingReminders,
+    pendingRemindersCount
   } = useReminders(websites, user?.id, triggerRefresh);
 
   useEffect(() => {
@@ -229,7 +232,12 @@ const Dashboard: React.FC = () => {
 
     // Filter by category
     if (selectedCategory !== 'all') {
-      filtered = filtered.filter(website => website.category === selectedCategory);
+      if (selectedCategory === 'Reminders') {
+        // Show pending reminders
+        filtered = getPendingReminders();
+      } else {
+        filtered = filtered.filter(website => website.category === selectedCategory);
+      }
     }
 
     // Filter by search
@@ -295,54 +303,158 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  // Reminder action helpers for individual websites
+  const handleReminderOpenWebsite = async (website: Website) => {
+    try {
+      // Open website in new tab
+      window.open(website.url, '_blank');
+      
+      // Update reminder timestamp
+      const { error } = await supabase
+        .from('websites')
+        .update({ 
+          last_reminded_at: new Date().toISOString()
+        })
+        .eq('id', website.id)
+        .eq('user_id', user?.id);
+        
+      if (error) throw error;
+      
+      // Refresh data
+      triggerRefresh();
+    } catch (error: any) {
+      console.error('Error handling reminder open:', error);
+      toast.error('Failed to update reminder');
+    }
+  };
+
+  const handleReminderCheckLater = async (website: Website) => {
+    try {
+      // Update reminder timestamp so it won't show again for a while
+      const { error } = await supabase
+        .from('websites')
+        .update({ 
+          last_reminded_at: new Date().toISOString()
+        })
+        .eq('id', website.id)
+        .eq('user_id', user?.id);
+        
+      if (error) throw error;
+      
+      // Refresh data
+      triggerRefresh();
+      toast.success('Reminder postponed');
+    } catch (error: any) {
+      console.error('Error handling check later:', error);
+      toast.error('Failed to update reminder');
+    }
+  };
+
+  const handleReminderDismiss = async (website: Website) => {
+    try {
+      // Permanently dismiss reminders for this website
+      const { error } = await supabase
+        .from('websites')
+        .update({ 
+          reminder_dismissed: true,
+          last_reminded_at: new Date().toISOString()
+        })
+        .eq('id', website.id)
+        .eq('user_id', user?.id);
+        
+      if (error) throw error;
+      
+      // Refresh data
+      triggerRefresh();
+      toast.success('Reminder dismissed permanently');
+    } catch (error: any) {
+      console.error('Error handling dismiss reminder:', error);
+      toast.error('Failed to dismiss reminder');
+    }
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className={`min-h-screen flex items-center justify-center transition-colors duration-300 ${
+        isDarkMode ? 'bg-black' : 'bg-white'
+      }`} style={{ fontFamily: "'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
+        <div className={`animate-spin rounded-full h-8 w-8 border-b ${
+          isDarkMode ? 'border-[#e9e9e9]' : 'border-[#37352f]'
+        }`}></div>
       </div>
     );
   }
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${
-      isDarkMode ? 'bg-gray-900' : 'bg-gray-50'
-    }`}>
+    <div className={`min-h-screen transition-all duration-300 ${
+      isDarkMode ? 'bg-black' : 'bg-white'
+    }`} style={{ fontFamily: "'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
       {/* Header */}
-      <header className={`shadow-sm border-b transition-colors duration-300 ${
+      <header className={`border-b transition-all duration-300 ${
         isDarkMode 
-          ? 'bg-gray-800 border-gray-700' 
-          : 'bg-white border-gray-200'
+          ? 'bg-black border-[#2e2e2e]' 
+          : 'bg-white border-[#e9e9e9]'
       }`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[120rem] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3">
-              <div className="bg-blue-600 w-8 h-8 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">SB</span>
+            <div className="flex items-center gap-4">
+              <div className="w-8 h-8 flex items-center justify-center overflow-hidden rounded">
+                <img 
+                  src="/logo.png" 
+                  alt="Memorai Logo" 
+                  className="w-full h-full object-contain"
+                  onError={(e) => {
+                    // Fallback to text if image fails to load
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    const parent = target.parentElement;
+                    if (parent && !parent.querySelector('.fallback-text')) {
+                      const fallback = document.createElement('span');
+                      fallback.className = `font-light text-sm fallback-text ${
+                        isDarkMode ? 'text-white' : 'text-black'
+                      }`;
+                      fallback.textContent = 'AB';
+                      parent.appendChild(fallback);
+                    }
+                  }}
+                />
               </div>
-              <h1 className={`text-xl font-bold transition-colors duration-300 ${
-                isDarkMode ? 'text-white' : 'text-gray-900'
-              }`}>SecondBrain</h1>
+              <div>
+                <h1 className={`text-xl font-normal transition-colors duration-300 ${
+                  isDarkMode ? 'text-[#e9e9e9]' : 'text-[#37352f]'
+                }`}>Memorai</h1>
+                <p className={`text-xs font-normal transition-colors duration-300 ${
+                  isDarkMode ? 'text-[#787774]' : 'text-[#787774]'
+                }`}>Your Digital Library</p>
+              </div>
             </div>
             
-            <div className="flex items-center gap-3">
-              <span className={`text-sm hidden sm:block transition-colors duration-300 ${
-                isDarkMode ? 'text-gray-300' : 'text-gray-600'
+            <div className="flex items-center gap-4">
+              <div className={`px-3 py-1.5 border rounded transition-colors duration-300 ${
+                isDarkMode ? 'border-[#2e2e2e] bg-[#191919]' : 'border-[#e9e9e9] bg-white'
               }`}>
-                Welcome, {user?.email}
-              </span>
+                <span className={`text-sm font-normal transition-colors duration-300 ${
+                  isDarkMode ? 'text-[#787774]' : 'text-[#787774]'
+                }`}>
+                  Welcome, <span className={`font-medium ${
+                    isDarkMode ? 'text-[#e9e9e9]' : 'text-[#37352f]'
+                  }`}>{user?.email?.split('@')[0]}</span>
+                </span>
+              </div>
               
               {/* Theme Toggle */}
               <ThemeToggle />
               
               <button
                 onClick={handleSignOut}
-                className={`flex items-center gap-2 px-3 py-2 transition-colors duration-300 ${
+                className={`flex items-center gap-2 px-2 py-1.5 border rounded transition-all duration-150 text-sm font-normal ${
                   isDarkMode 
-                    ? 'text-gray-300 hover:text-white' 
-                    : 'text-gray-600 hover:text-gray-900'
+                    ? 'text-[#787774] hover:text-[#e9e9e9] border-[#2e2e2e] hover:bg-[#2e2e2e]' 
+                    : 'text-[#787774] hover:text-[#37352f] border-[#e9e9e9] hover:bg-[#f1f1ef]'
                 }`}
+                title="Sign out"
               >
-                <LogOut className="h-4 w-4" />
+                <LogOut className="h-3.5 w-3.5" />
                 <span className="hidden sm:block">Sign Out</span>
               </button>
             </div>
@@ -350,7 +462,7 @@ const Dashboard: React.FC = () => {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-[120rem] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar */}
           <div className="w-full lg:w-64 flex-shrink-0">
@@ -361,13 +473,18 @@ const Dashboard: React.FC = () => {
               totalWebsites={websites.length}
               onCategoryChange={handleCategoryChange}
               recentlyAddedCount={recentlyAddedCount}
+              pendingRemindersCount={pendingRemindersCount}
             />
             
             <button
               onClick={() => setIsAddModalOpen(true)}
-              className="w-full mt-6 bg-blue-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+              className={`w-full mt-6 border rounded-lg px-2 py-1.5 text-sm font-normal transition-all duration-150 flex items-center justify-center gap-2 ${
+                isDarkMode 
+                  ? 'bg-[#2e2e2e] text-[#e9e9e9] border-[#2e2e2e] hover:bg-[#3e3e3e]' 
+                  : 'bg-[#f1f1ef] text-[#37352f] border-[#e9e9e9] hover:bg-[#e9e9e9]'
+              }`}
             >
-              <Plus className="h-5 w-5" />
+              <Plus className="h-3.5 w-3.5" />
               Add Website
             </button>
           </div>
@@ -384,67 +501,81 @@ const Dashboard: React.FC = () => {
               />
               
               <div className="flex justify-between items-center">
-                <p className={`transition-colors duration-300 ${
-                  isDarkMode ? 'text-gray-300' : 'text-gray-600'
+                <div className={`px-2 py-1.5 border rounded transition-colors duration-300 ${
+                  isDarkMode ? 'border-[#2e2e2e] bg-[#191919] text-[#787774]' : 'border-[#e9e9e9] bg-white text-[#787774]'
                 }`}>
-                  {filteredWebsites.length} website{filteredWebsites.length !== 1 ? 's' : ''} found
-                </p>
+                  <p className="text-sm font-normal">
+                    <span className="font-medium">{filteredWebsites.length}</span> website{filteredWebsites.length !== 1 ? 's' : ''} found
+                  </p>
+                </div>
                 
-                <div className="flex items-center gap-2">
+                <div className={`flex items-center gap-0.5 p-1 border rounded transition-colors duration-300 ${
+                  isDarkMode ? 'border-[#2e2e2e] bg-[#191919]' : 'border-[#e9e9e9] bg-white'
+                }`}>
                   <button
                     onClick={() => setViewMode('grid')}
-                    className={`p-2 rounded-lg transition-colors duration-300 ${
+                    className={`p-2 rounded transition-all duration-150 ${
                       viewMode === 'grid' 
                         ? isDarkMode
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-blue-100 text-blue-600'
+                          ? 'bg-[#2e2e2e] text-[#e9e9e9]'
+                          : 'bg-[#f1f1ef] text-[#37352f]'
                         : isDarkMode
-                          ? 'text-gray-400 hover:text-gray-200'
-                          : 'text-gray-600 hover:text-gray-900'
+                          ? 'text-[#787774] hover:text-[#e9e9e9] hover:bg-[#2e2e2e]'
+                          : 'text-[#787774] hover:text-[#37352f] hover:bg-[#f1f1ef]'
                     }`}
+                    title="Grid view"
                   >
-                    <Grid className="h-4 w-4" />
+                    <Grid className="h-3.5 w-3.5" />
                   </button>
                   <button
                     onClick={() => setViewMode('list')}
-                    className={`p-2 rounded-lg transition-colors duration-300 ${
+                    className={`p-2 rounded transition-all duration-150 ${
                       viewMode === 'list' 
                         ? isDarkMode
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-blue-100 text-blue-600'
+                          ? 'bg-[#2e2e2e] text-[#e9e9e9]'
+                          : 'bg-[#f1f1ef] text-[#37352f]'
                         : isDarkMode
-                          ? 'text-gray-400 hover:text-gray-200'
-                          : 'text-gray-600 hover:text-gray-900'
+                          ? 'text-[#787774] hover:text-[#e9e9e9] hover:bg-[#2e2e2e]'
+                          : 'text-[#787774] hover:text-[#37352f] hover:bg-[#f1f1ef]'
                     }`}
+                    title="List view"
                   >
-                    <List className="h-4 w-4" />
+                    <List className="h-3.5 w-3.5" />
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* Websites Grid/List */}
-            {filteredWebsites.length === 0 ? (
-              <div className="text-center py-12">
-                <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 transition-colors duration-300 ${
-                  isDarkMode ? 'bg-gray-700' : 'bg-gray-100'
-                }`}>
-                  <Grid className={`h-8 w-8 transition-colors duration-300 ${
-                    isDarkMode ? 'text-gray-400' : 'text-gray-400'
-                  }`} />
-                </div>
-                <h3 className={`text-lg font-medium mb-2 transition-colors duration-300 ${
-                  isDarkMode ? 'text-white' : 'text-gray-900'
+            {/* Websites Grid/List or Reminders Panel */}
+            {selectedCategory === 'Reminders' ? (
+              <RemindersPanel
+                websites={filteredWebsites}
+                onOpenWebsite={handleReminderOpenWebsite}
+                onCheckLater={handleReminderCheckLater}
+                onDismissReminder={handleReminderDismiss}
+                onViewDetails={handleViewWebsite}
+              />
+            ) : filteredWebsites.length === 0 ? (
+              <div className="text-center py-16">
+                <Grid className={`h-12 w-12 mx-auto mb-6 transition-colors duration-300 ${
+                  isDarkMode ? 'text-[#787774]' : 'text-[#9b9a97]'
+                }`} />
+                <h3 className={`text-2xl font-medium mb-3 transition-colors duration-300 ${
+                  isDarkMode ? 'text-[#e9e9e9]' : 'text-[#37352f]'
                 }`}>No websites found</h3>
-                <p className={`mb-4 transition-colors duration-300 ${
-                  isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                <p className={`text-sm mb-8 font-normal transition-colors duration-300 ${
+                  isDarkMode ? 'text-[#787774]' : 'text-[#787774]'
                 }`}>
-                  {searchQuery ? 'Try adjusting your search terms' : 'Start saving your first website!'}
+                  {searchQuery ? 'Try adjusting your search terms' : 'Start building your digital library!'}
                 </p>
                 {!searchQuery && (
                   <button
                     onClick={() => setIsAddModalOpen(true)}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                    className={`border rounded-lg px-2 py-1.5 text-sm font-normal transition-all duration-150 ${
+                      isDarkMode 
+                        ? 'bg-[#2e2e2e] text-[#e9e9e9] border-[#2e2e2e] hover:bg-[#3e3e3e]' 
+                        : 'bg-[#f1f1ef] text-[#37352f] border-[#e9e9e9] hover:bg-[#e9e9e9]'
+                    }`}
                   >
                     Add Your First Website
                   </button>
@@ -453,7 +584,7 @@ const Dashboard: React.FC = () => {
             ) : (
               <div className={
                 viewMode === 'grid' 
-                  ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'
+                  ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6'
                   : 'space-y-4 overflow-hidden'
               }>
                 {filteredWebsites.map((website) => (
@@ -472,15 +603,20 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Footer */}
-      <footer className={`border-t transition-colors duration-300 ${
+      <footer className={`border-t transition-all duration-300 ${
         isDarkMode 
-          ? 'border-gray-700 bg-gray-800' 
-          : 'border-gray-200 bg-white'
+          ? 'border-[#2e2e2e] bg-black' 
+          : 'border-[#e9e9e9] bg-white'
       }`}>
-        <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center text-sm transition-colors duration-300 ${
-          isDarkMode ? 'text-gray-400' : 'text-gray-600'
-        }`}>
-          made with ❤ by Ameya Bhagat
+        <div className={`max-w-[120rem] mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center transition-colors duration-300`}>
+          <div className={`inline-flex items-center gap-2 px-2 py-1.5 border rounded transition-colors duration-300 ${
+            isDarkMode ? 'border-[#2e2e2e] bg-[#191919] text-[#787774]' : 'border-[#e9e9e9] bg-white text-[#787774]'
+          }`}>
+            <span className="text-sm font-normal">Made with</span>
+            <span className="text-red-500 text-lg animate-pulse">❤</span>
+            <span className="text-sm font-normal">by</span>
+            <span className="text-sm font-medium">Ameya Bhagat</span>
+          </div>
         </div>
       </footer>
 
@@ -500,17 +636,6 @@ const Dashboard: React.FC = () => {
           onClose={handleCloseDetailsModal}
           onUpdate={fetchWebsites}
           categories={categories.map(c => c.name)}
-        />
-      )}
-
-      {/* Reminder Modal */}
-      {reminderWebsite && (
-        <ReminderModal
-          website={reminderWebsite}
-          isOpen={showReminder}
-          onOpenWebsite={handleOpenWebsite}
-          onCheckLater={handleCheckLater}
-          onDismiss={handleDismissReminder}
         />
       )}
     </div>

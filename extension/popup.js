@@ -145,8 +145,27 @@ async function saveTabToDatabase(tabData) {
   }
 }
 
+// Apply dark mode class
+function applyDarkMode() {
+  const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  if (isDarkMode) {
+    document.body.classList.add('dark');
+  } else {
+    document.body.classList.remove('dark');
+  }
+  
+  // Listen for changes
+  if (window.matchMedia) {
+    const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    darkModeQuery.addEventListener('change', applyDarkMode);
+  }
+}
+
 // Initialize popup
 async function initPopup() {
+  // Apply dark mode first
+  applyDarkMode();
+  
   const isConfigured = await loadConfig();
 
   if (!isConfigured) {
@@ -183,15 +202,29 @@ async function initPopup() {
       width: 100%;
       border: none;
       background: transparent;
-      font-size: 14px;
-      font-weight: 500;
-      color: #1f2937;
+      font-size: 13px;
+      font-weight: 400;
       padding: 2px 0;
       margin-bottom: 2px;
+      outline: none;
+      font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     `;
+    
+    // Apply color based on dark mode - check if body has dark class
+    const updateTitleColor = () => {
+      titleInput.style.color = '#e8eaed';
+    };
+    
+    // Set initial color
+    updateTitleColor();
+    
+    // Update color when dark mode changes
+    const observer = new MutationObserver(updateTitleColor);
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
     
     const titleElement = document.getElementById('tabTitle');
     titleElement.innerHTML = '';
+    titleElement.style.minHeight = '20px';
     titleElement.appendChild(titleInput);
 
     // Set tab URL (display only)
@@ -205,8 +238,6 @@ async function initPopup() {
       favEl.src = favicon;
     }
 
-
-
   } catch (error) {
     console.error('Failed to load tab info:', error);
     showStatus('Failed to load tab information', 'error');
@@ -215,8 +246,6 @@ async function initPopup() {
 
 // Event listeners
 document.addEventListener('DOMContentLoaded', initPopup);
-
-
 
 // Save configuration
 document.getElementById('saveConfig')?.addEventListener('click', async () => {
@@ -274,8 +303,6 @@ document.getElementById('openDashboard')?.addEventListener('click', () => {
   }
 });
 
-
-
 // Save tab
 document.getElementById('saveTab')?.addEventListener('click', async () => {
   const saveBtn = document.getElementById('saveTab');
@@ -308,7 +335,10 @@ document.getElementById('saveTab')?.addEventListener('click', async () => {
 
     // Show success state
     saveBtn.innerHTML = '<span class="saved-icon">✓</span> Saved to Dashboard!';
-    saveBtn.style.background = '#10b981';
+    saveBtn.classList.add('btn-primary');
+    saveBtn.style.background = '#8ab4f8';
+    saveBtn.style.borderColor = '#8ab4f8';
+    saveBtn.style.color = '#121212';
 
     showStatus('Website saved successfully! Check your dashboard to see it.', 'success');
 
@@ -320,6 +350,9 @@ document.getElementById('saveTab')?.addEventListener('click', async () => {
       saveBtn.disabled = false;
       saveBtn.innerHTML = originalText;
       saveBtn.style.background = '';
+      saveBtn.style.borderColor = '';
+      saveBtn.style.color = '';
+      saveBtn.classList.remove('btn-primary');
     }, 2000);
 
   } catch (error) {

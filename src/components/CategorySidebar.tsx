@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Folder, FolderOpen, Hash, Settings, Clock } from 'lucide-react';
+import { Folder, FolderOpen, Hash, Settings, Clock, Bell } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import type { Category } from '../types';
 import CategoryManagement from './CategoryManagement';
@@ -11,6 +11,7 @@ interface CategorySidebarProps {
   totalWebsites: number;
   onCategoryChange: () => void;
   recentlyAddedCount: number;
+  pendingRemindersCount: number;
 }
 
 const CategorySidebar: React.FC<CategorySidebarProps> = ({
@@ -20,135 +21,229 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
   totalWebsites,
   onCategoryChange,
   recentlyAddedCount,
+  pendingRemindersCount,
 }) => {
   const { isDarkMode } = useTheme();
   const [showManagement, setShowManagement] = useState(false);
+  
   return (
-    <div className={`rounded-lg shadow-sm border p-4 transition-colors duration-300 ${
+    <div className={`rounded-lg transition-all duration-300 ${
       isDarkMode 
-        ? 'bg-gray-800 border-gray-700' 
-        : 'bg-white border-gray-200'
-    }`}>
-      <h2 className={`font-semibold mb-4 flex items-center gap-2 transition-colors duration-300 ${
-        isDarkMode ? 'text-white' : 'text-gray-900'
-      }`}>
-        <Folder className="h-4 w-4" />
-        Categories
-      </h2>
-      
-      <div className="space-y-1">
-        <button
-          onClick={() => onCategorySelect('all')}
-          className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center justify-between ${
-            selectedCategory === 'all'
-              ? isDarkMode
-                ? 'bg-blue-600 text-white font-medium'
-                : 'bg-blue-100 text-blue-700 font-medium'
-              : isDarkMode
-                ? 'text-gray-300 hover:bg-gray-700'
-                : 'text-gray-700 hover:bg-gray-100'
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            {selectedCategory === 'all' ? (
-              <FolderOpen className="h-4 w-4" />
-            ) : (
-              <Folder className="h-4 w-4" />
-            )}
-            All Websites
-          </div>
-          <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-full">
-            {totalWebsites}
-          </span>
-        </button>
+        ? 'bg-[#191919] border border-[#2e2e2e]' 
+        : 'bg-white border border-[#e9e9e9]'
+    }`} style={{ fontFamily: "'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
+      <div className="p-4">
+        <h2 className={`font-medium text-sm mb-4 flex items-center gap-2.5 transition-colors duration-300 ${
+          isDarkMode ? 'text-[#e9e9e9]' : 'text-[#37352f]'
+        }`}>
+          <Folder className="h-4 w-4" />
+          Categories
+        </h2>
         
-        {/* Recently Added - Special System Category */}
-        <button
-          onClick={() => onCategorySelect('Recently Added')}
-          className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center justify-between ${
-            selectedCategory === 'Recently Added'
-              ? 'bg-orange-100 text-orange-700 font-medium border border-orange-200'
-              : 'text-gray-700 hover:bg-gray-100'
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            {selectedCategory === 'Recently Added' ? (
-              <Clock className="h-4 w-4 text-orange-600" />
-            ) : (
-              <Clock className="h-4 w-4 text-orange-500" />
-            )}
-            <span className="font-medium">Recently Added</span>
-            {recentlyAddedCount > 0 && (
-              <span className="text-xs bg-orange-200 text-orange-700 px-1.5 py-0.5 rounded-full ml-1">
-                New!
-              </span>
-            )}
-          </div>
-          <span className={`text-xs px-2 py-1 rounded-full ${
-            selectedCategory === 'Recently Added'
-              ? 'bg-orange-200 text-orange-700'
-              : 'bg-gray-200 text-gray-600'
-          }`}>
-            {recentlyAddedCount}
-          </span>
-        </button>
-        
-        {categories.map((category) => (
+        <div className="space-y-0.5">
           <button
-            key={category.id}
-            onClick={() => onCategorySelect(category.name)}
-            className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center justify-between ${
-              selectedCategory === category.name
-                ? 'bg-blue-100 text-blue-700 font-medium'
-                : 'text-gray-700 hover:bg-gray-100'
+            onClick={() => onCategorySelect('all')}
+            className={`w-full text-left px-2 py-1.5 rounded transition-all duration-150 flex items-center justify-between text-sm ${
+              selectedCategory === 'all'
+                ? isDarkMode
+                  ? 'bg-[#2e2e2e] text-[#e9e9e9]'
+                  : 'bg-[#f1f1ef] text-[#37352f]'
+                : isDarkMode
+                  ? 'text-[#c9c9c9] hover:bg-[#2e2e2e] hover:text-[#e9e9e9]'
+                  : 'text-[#787774] hover:bg-[#f1f1ef] hover:text-[#37352f]'
             }`}
           >
             <div className="flex items-center gap-2">
-              {selectedCategory === category.name ? (
-                <FolderOpen className="h-4 w-4" />
+              {selectedCategory === 'all' ? (
+                <FolderOpen className="h-3.5 w-3.5" />
               ) : (
-                <Hash className="h-4 w-4" />
+                <Folder className="h-3.5 w-3.5" />
               )}
-              <span className="capitalize truncate">{category.name}</span>
+              <span className="font-normal">All Websites</span>
             </div>
-            <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-full">
-              {category.count}
+            <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
+              selectedCategory === 'all'
+                ? isDarkMode
+                  ? 'text-[#e9e9e9] bg-[#3e3e3e]'
+                  : 'text-[#37352f] bg-[#e9e9e9]'
+                : isDarkMode
+                  ? 'text-[#787774]'
+                  : 'text-[#9b9a97]'
+            }`}>
+              {totalWebsites}
             </span>
           </button>
-        ))}
-      </div>
-      
-      {categories.length === 0 && (
-        <p className="text-gray-500 text-sm italic text-center py-4">
-          No categories yet
-        </p>
-      )}
-      
-      {/* Category Management Toggle */}
-      <div className="mt-4 pt-4 border-t border-gray-200">
-        <button
-          onClick={() => setShowManagement(!showManagement)}
-          className="w-full flex items-center justify-between px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
-        >
-          <div className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Manage Categories
-          </div>
-          <span className={`transform transition-transform ${
-            showManagement ? 'rotate-180' : ''
-          }`}>
-            ↓
-          </span>
-        </button>
+          
+          {/* Recently Added */}
+          <button
+            onClick={() => onCategorySelect('Recently Added')}
+            className={`w-full text-left px-2 py-1.5 rounded transition-all duration-150 flex items-center justify-between text-sm ${
+              selectedCategory === 'Recently Added'
+                ? isDarkMode
+                  ? 'bg-[#2e2e2e] text-[#e9e9e9]'
+                  : 'bg-[#f1f1ef] text-[#37352f]'
+                : isDarkMode
+                  ? 'text-[#c9c9c9] hover:bg-[#2e2e2e] hover:text-[#e9e9e9]'
+                  : 'text-[#787774] hover:bg-[#f1f1ef] hover:text-[#37352f]'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <Clock className="h-3.5 w-3.5" />
+              <span className="font-normal">Recently Added</span>
+              {recentlyAddedCount > 0 && (
+                <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
+                  selectedCategory === 'Recently Added'
+                    ? isDarkMode
+                      ? 'text-[#e9e9e9] bg-[#3e3e3e]'
+                      : 'text-[#37352f] bg-[#e9e9e9]'
+                    : isDarkMode
+                      ? 'text-[#787774] bg-[#2e2e2e]'
+                      : 'text-[#9b9a97] bg-[#f1f1ef]'
+                }`}>
+                  New
+                </span>
+              )}
+            </div>
+            <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
+              selectedCategory === 'Recently Added'
+                ? isDarkMode
+                  ? 'text-[#e9e9e9] bg-[#3e3e3e]'
+                  : 'text-[#37352f] bg-[#e9e9e9]'
+                : isDarkMode
+                  ? 'text-[#787774]'
+                  : 'text-[#9b9a97]'
+            }`}>
+              {recentlyAddedCount}
+            </span>
+          </button>
+
+          {/* Reminders */}
+          <button
+            onClick={() => onCategorySelect('Reminders')}
+            className={`w-full text-left px-2 py-1.5 rounded transition-all duration-150 flex items-center justify-between text-sm ${
+              selectedCategory === 'Reminders'
+                ? isDarkMode
+                  ? 'bg-[#2e2e2e] text-[#e9e9e9]'
+                  : 'bg-[#f1f1ef] text-[#37352f]'
+                : isDarkMode
+                  ? 'text-[#c9c9c9] hover:bg-[#2e2e2e] hover:text-[#e9e9e9]'
+                  : 'text-[#787774] hover:bg-[#f1f1ef] hover:text-[#37352f]'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <Bell className="h-3.5 w-3.5" />
+              <span className="font-normal">Reminders</span>
+              {pendingRemindersCount > 0 && (
+                <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
+                  selectedCategory === 'Reminders'
+                    ? isDarkMode
+                      ? 'text-[#e9e9e9] bg-[#3e3e3e]'
+                      : 'text-[#37352f] bg-[#e9e9e9]'
+                    : isDarkMode
+                      ? 'text-[#787774] bg-[#2e2e2e]'
+                      : 'text-[#9b9a97] bg-[#f1f1ef]'
+                }`}>
+                  {pendingRemindersCount}
+                </span>
+              )}
+            </div>
+            <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
+              selectedCategory === 'Reminders'
+                ? isDarkMode
+                  ? 'text-[#e9e9e9] bg-[#3e3e3e]'
+                  : 'text-[#37352f] bg-[#e9e9e9]'
+                : isDarkMode
+                  ? 'text-[#787774]'
+                  : 'text-[#9b9a97]'
+            }`}>
+              {pendingRemindersCount}
+            </span>
+          </button>
+          
+          {categories.map((category) => (
+            <button
+              key={category.id}
+              onClick={() => onCategorySelect(category.name)}
+              className={`w-full text-left px-2 py-1.5 rounded transition-all duration-150 flex items-center justify-between text-sm ${
+                selectedCategory === category.name
+                  ? isDarkMode
+                    ? 'bg-[#2e2e2e] text-[#e9e9e9]'
+                    : 'bg-[#f1f1ef] text-[#37352f]'
+                  : isDarkMode
+                    ? 'text-[#c9c9c9] hover:bg-[#2e2e2e] hover:text-[#e9e9e9]'
+                    : 'text-[#787774] hover:bg-[#f1f1ef] hover:text-[#37352f]'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                {selectedCategory === category.name ? (
+                  <FolderOpen className="h-3.5 w-3.5" />
+                ) : (
+                  <Hash className="h-3.5 w-3.5" />
+                )}
+                <span className="capitalize truncate font-normal">{category.name}</span>
+              </div>
+              <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
+                selectedCategory === category.name
+                  ? isDarkMode
+                    ? 'text-[#e9e9e9] bg-[#3e3e3e]'
+                    : 'text-[#37352f] bg-[#e9e9e9]'
+                  : isDarkMode
+                    ? 'text-[#787774]'
+                    : 'text-[#9b9a97]'
+              }`}>
+                {category.count}
+              </span>
+            </button>
+          ))}
+        </div>
         
-        {showManagement && (
-          <div className="mt-3 pl-2">
-            <CategoryManagement
-              categories={categories}
-              onCategoryChange={onCategoryChange}
-            />
+        {categories.length === 0 && (
+          <div className="text-center py-8">
+            <Hash className={`h-5 w-5 mx-auto mb-2 transition-colors duration-300 ${
+              isDarkMode ? 'text-[#787774]' : 'text-[#9b9a97]'
+            }`} />
+            <p className={`text-sm font-normal transition-colors duration-300 ${
+              isDarkMode ? 'text-[#787774]' : 'text-[#9b9a97]'
+            }`}>
+              No categories yet
+            </p>
           </div>
         )}
+        
+        {/* Category Management Toggle */}
+        <div className={`mt-4 pt-4 border-t transition-colors duration-300 ${
+          isDarkMode ? 'border-[#2e2e2e]' : 'border-[#e9e9e9]'
+        }`}>
+          <button
+            onClick={() => setShowManagement(!showManagement)}
+            className={`w-full flex items-center justify-between px-2 py-1.5 rounded text-sm font-normal transition-all duration-150 ${
+              isDarkMode 
+                ? 'text-[#787774] hover:text-[#e9e9e9] hover:bg-[#2e2e2e]' 
+                : 'text-[#787774] hover:text-[#37352f] hover:bg-[#f1f1ef]'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <Settings className="h-3.5 w-3.5" />
+              <span>Manage Categories</span>
+            </div>
+            <div className={`transform transition-transform duration-200 ${
+              showManagement ? 'rotate-180' : ''
+            }`}>
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </button>
+          
+          {showManagement && (
+            <div className="mt-3">
+              <CategoryManagement
+                categories={categories}
+                onCategoryChange={onCategoryChange}
+              />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

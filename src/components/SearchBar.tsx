@@ -19,15 +19,19 @@ const SearchBar: React.FC<SearchBarProps> = ({
   const isAISearch = value.startsWith('ai:');
 
   return (
-    <div className="relative">
+    <div className="relative" style={{ fontFamily: "'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
         {isSearchingAI ? (
-          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+          <div className={`animate-spin rounded-full h-3.5 w-3.5 border-b border ${
+            isDarkMode ? 'border-[#e9e9e9]' : 'border-[#37352f]'
+          }`}></div>
         ) : isAISearch ? (
-          <Sparkles className="h-5 w-5 text-purple-500" />
+          <Sparkles className={`h-3.5 w-3.5 ${
+            isDarkMode ? 'text-[#e9e9e9]' : 'text-[#37352f]'
+          }`} />
         ) : (
-          <Search className={`h-5 w-5 transition-colors duration-300 ${
-            isDarkMode ? 'text-gray-400' : 'text-gray-400'
+          <Search className={`h-3.5 w-3.5 transition-colors duration-300 ${
+            isDarkMode ? 'text-[#787774]' : 'text-[#787774]'
           }`} />
         )}
       </div>
@@ -37,38 +41,36 @@ const SearchBar: React.FC<SearchBarProps> = ({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className={`block w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-offset-0 transition-all duration-200 ${
-          isAISearch
-            ? isDarkMode
-              ? 'border-purple-600 focus:border-purple-400 focus:ring-purple-900/50 bg-purple-900/20 text-white placeholder-gray-300'
-              : 'border-purple-300 focus:border-purple-500 focus:ring-purple-200 bg-purple-50 text-gray-900 placeholder-gray-500'
-            : isDarkMode
-              ? 'border-gray-600 focus:border-blue-400 focus:ring-blue-900/50 bg-gray-700 text-white placeholder-gray-400'
-              : 'border-gray-300 focus:border-blue-500 focus:ring-blue-200 bg-white text-gray-900 placeholder-gray-500'
+        className={`block w-full pl-10 pr-4 py-2 border rounded-lg font-normal text-sm transition-all duration-300 focus:outline-none ${
+          isDarkMode
+            ? 'border-[#2e2e2e] bg-[#191919] text-[#e9e9e9] placeholder-[#787774] focus:border-[#3e3e3e]'
+            : 'border-[#e9e9e9] bg-white text-[#37352f] placeholder-[#9b9a97] focus:border-[#c9c9c9]'
         }`}
       />
       
-      {isAISearch && (
-        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-          <span className={`text-xs font-medium px-2 py-1 rounded transition-colors duration-300 ${
-            isDarkMode 
-              ? 'text-purple-300 bg-purple-900/50' 
-              : 'text-purple-600 bg-purple-100'
-          }`}>
-            AI Search
-          </span>
-        </div>
-      )}
-      
-      {!value && (
-        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-          <span className={`text-xs transition-colors duration-300 ${
-            isDarkMode ? 'text-gray-400' : 'text-gray-400'
-          }`}>
-            Try "ai:resume tools"
-          </span>
-        </div>
-      )}
+        {isAISearch && (
+          <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+            <span className={`text-xs font-medium px-1.5 py-0.5 rounded transition-colors duration-300 ${
+              isDarkMode 
+                ? 'text-[#e9e9e9] bg-[#3e3e3e]' 
+                : 'text-[#37352f] bg-[#e9e9e9]'
+            }`}>
+              AI
+            </span>
+          </div>
+        )}
+        
+        {!value && !isAISearch && (
+          <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+            <span className={`text-xs font-normal transition-colors duration-300 ${
+              isDarkMode 
+                ? 'text-[#787774]' 
+                : 'text-[#9b9a97]'
+            }`}>
+              prefix "ai:" for smart search
+            </span>
+          </div>
+        )}
     </div>
   );
 };

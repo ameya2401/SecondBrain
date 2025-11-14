@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "SecondBrain",
+  "name": "Memorai",
   "version": "1.0.0",
   "description": "Save and organize your browser tabs with AI-powered search",
   "permissions": [
@@ -16,7 +16,7 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "SecondBrain"
+    "default_title": "Memorai"
   },
   "background": {
     "service_worker": "background.js"

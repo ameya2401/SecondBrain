@@ -4,7 +4,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SecondBrain</title>
+  <title>Memorai</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * {
       margin: 0;
@@ -12,50 +15,80 @@
       box-sizing: border-box;
     }
 
+    html {
+      background: #121212;
+      transition: background 0.3s;
+    }
+
+    .dark html {
+      background: #121212;
+    }
+
     body {
       width: 350px;
-      padding: 20px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #f8fafc;
+      min-height: 100vh;
+      padding: 16px;
+      font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #121212;
+      transition: all 0.3s;
+    }
+
+    .dark body {
+      background: #121212;
     }
 
     .header {
       text-align: center;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
+      background: #1e1e1e;
+      border: 1px solid #333333;
+      border-radius: 8px;
+      padding: 16px 0;
+      transition: all 0.3s;
     }
 
-    .logo {
-      width: 40px;
-      height: 40px;
-      background: #3b82f6;
-      border-radius: 8px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-weight: bold;
-      font-size: 16px;
-      margin-bottom: 8px;
+    .dark .header {
+      background: #1e1e1e;
+      border: 1px solid #333333;
     }
 
     .title {
-      color: #1f2937;
-      font-size: 18px;
-      font-weight: 600;
-      margin-bottom: 4px;
+      color: #e8eaed;
+      font-size: 16px;
+      font-weight: 500;
+      margin-bottom: 2px;
+      transition: color 0.3s;
+    }
+
+    .dark .title {
+      color: #e8eaed;
     }
 
     .subtitle {
-      color: #6b7280;
-      font-size: 12px;
+      color: #9aa0a6;
+      font-size: 11px;
+      font-weight: 400;
+      opacity: 1;
+      transition: color 0.3s;
+    }
+
+    .dark .subtitle {
+      color: #9aa0a6;
+      opacity: 1;
     }
 
     .current-tab {
-      background: white;
-      border: 1px solid #e5e7eb;
+      background: #1e1e1e;
+      border: 1px solid #333333;
       border-radius: 8px;
-      padding: 12px;
+      padding: 16px;
       margin-bottom: 16px;
+      transition: all 0.3s;
+    }
+
+    .dark .current-tab {
+      background: #1e1e1e;
+      border: 1px solid #333333;
     }
 
     .tab-info {
@@ -78,42 +111,63 @@
     }
 
     .tab-title {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 500;
-      color: #1f2937;
+      color: #e8eaed;
       margin-bottom: 2px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
       min-height: 20px;
+      display: block;
+      transition: color 0.3s;
+    }
+
+    .dark .tab-title {
+      color: #e8eaed;
     }
 
     .tab-title-input {
       width: 100%;
-      border: 1px solid #d1d5db;
+      border: none;
       border-radius: 4px;
-      background: #f9fafb;
-      font-size: 14px;
-      font-weight: 500;
-      color: #1f2937;
-      padding: 4px 8px;
+      background: transparent;
+      font-size: 13px;
+      font-weight: 400;
+      color: #e8eaed;
+      padding: 2px 0;
       margin-bottom: 2px;
-      transition: border-color 0.2s, box-shadow 0.2s;
+      transition: color 0.3s;
+      outline: none;
+      display: block;
+    }
+
+    .dark .tab-title-input {
+      color: #e8eaed;
     }
 
     .tab-title-input:focus {
       outline: none;
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
-      background: white;
+      background: transparent;
+    }
+
+    .dark .tab-title-input:focus {
+      background: transparent;
     }
 
     .tab-url {
       font-size: 11px;
-      color: #6b7280;
+      color: #9aa0a6;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      transition: color 0.3s;
+      opacity: 1;
+    }
+
+    .dark .tab-url {
+      color: #9aa0a6;
+      opacity: 1;
     }
 
     .form-group {
@@ -124,27 +178,53 @@
       display: block;
       font-size: 12px;
       font-weight: 500;
-      color: #374151;
+      color: #e8eaed;
       margin-bottom: 4px;
+      transition: color 0.3s;
+      opacity: 1;
+    }
+
+    .dark label {
+      color: #e8eaed;
+      opacity: 1;
     }
 
     input,
     textarea,
     select {
       width: 100%;
-      padding: 8px 12px;
-      border: 1px solid #d1d5db;
+      padding: 6px 8px;
+      border: 1px solid #333333;
       border-radius: 6px;
-      font-size: 13px;
-      transition: border-color 0.2s, box-shadow 0.2s;
+      font-size: 12px;
+      font-weight: 400;
+      transition: all 0.3s;
+      background: #1e1e1e;
+      color: #e8eaed;
+      font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    .dark input,
+    .dark textarea,
+    .dark select {
+      border: 1px solid #333333;
+      background: #1e1e1e;
+      color: #e8eaed;
     }
 
     input:focus,
     textarea:focus,
     select:focus {
       outline: none;
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      border-color: #8ab4f8;
+      box-shadow: 0 0 0 1px #8ab4f8;
+    }
+
+    .dark input:focus,
+    .dark textarea:focus,
+    .dark select:focus {
+      border-color: #8ab4f8;
+      box-shadow: 0 0 0 1px #8ab4f8;
     }
 
     textarea {
@@ -160,36 +240,64 @@
 
     .btn {
       flex: 1;
-      padding: 10px 16px;
-      border: none;
+      padding: 6px 8px;
+      border: 1px solid;
       border-radius: 6px;
-      font-size: 13px;
-      font-weight: 500;
+      font-size: 12px;
+      font-weight: 400;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.15s;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
+      gap: 4px;
+      font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
 
     .btn-primary {
-      background: #3b82f6;
-      color: white;
+      background: #8ab4f8;
+      color: #121212;
+      border-color: #8ab4f8;
+    }
+
+    .dark .btn-primary {
+      background: #8ab4f8;
+      color: #121212;
+      border-color: #8ab4f8;
     }
 
     .btn-primary:hover:not(:disabled) {
-      background: #2563eb;
+      background: #9dc1ff;
+      border-color: #9dc1ff;
+    }
+
+    .dark .btn-primary:hover:not(:disabled) {
+      background: #9dc1ff;
+      border-color: #9dc1ff;
     }
 
     .btn-secondary {
-      background: #f3f4f6;
-      color: #374151;
-      border: 1px solid #d1d5db;
+      background: #333333;
+      color: #8ab4f8;
+      border-color: #444444;
+    }
+
+    .dark .btn-secondary {
+      background: #333333;
+      color: #8ab4f8;
+      border-color: #444444;
     }
 
     .btn-secondary:hover:not(:disabled) {
-      background: #e5e7eb;
+      background: #3c3c3c;
+      color: #9dc1ff;
+      border-color: #555555;
+    }
+
+    .dark .btn-secondary:hover:not(:disabled) {
+      background: #3c3c3c;
+      color: #9dc1ff;
+      border-color: #555555;
     }
 
     .btn:disabled {
@@ -201,33 +309,61 @@
       text-align: center;
       padding: 8px;
       border-radius: 6px;
-      font-size: 12px;
+      font-size: 11px;
+      font-weight: 400;
       margin-top: 12px;
+      transition: all 0.3s;
     }
 
     .status.success {
-      background: #d1fae5;
-      color: #065f46;
+      background: #1e1e1e;
+      color: #e8eaed;
+      border: 1px solid #333333;
     }
 
     .status.error {
-      background: #fee2e2;
-      color: #991b1b;
+      background: #1e1e1e;
+      color: #e8eaed;
+      border: 1px solid #333333;
     }
 
     .status.info {
-      background: #dbeafe;
-      color: #1e40af;
+      background: #1e1e1e;
+      color: #e8eaed;
+      border: 1px solid #333333;
+    }
+
+    .dark .status.success {
+      background: #1e1e1e;
+      color: #e8eaed;
+      border: 1px solid #333333;
+    }
+
+    .dark .status.error {
+      background: #1e1e1e;
+      color: #e8eaed;
+      border: 1px solid #333333;
+    }
+
+    .dark .status.info {
+      background: #1e1e1e;
+      color: #e8eaed;
+      border: 1px solid #333333;
     }
 
     .loading {
       display: inline-block;
       width: 12px;
       height: 12px;
-      border: 2px solid #f3f3f3;
-      border-top: 2px solid #3b82f6;
+      border: 2px solid #121212;
+      border-top: 2px solid #8ab4f8;
       border-radius: 50%;
       animation: spin 1s linear infinite;
+    }
+
+    .dark .loading {
+      border: 2px solid #121212;
+      border-top: 2px solid #8ab4f8;
     }
 
     @keyframes spin {
@@ -241,40 +377,71 @@
     }
 
     .config-section {
-      background: white;
-      border: 1px solid #e5e7eb;
+      background: #1e1e1e;
+      border: 1px solid #333333;
       border-radius: 8px;
-      padding: 12px;
+      padding: 16px;
       margin-bottom: 16px;
+      transition: all 0.3s;
+    }
+
+    .dark .config-section {
+      background: #1e1e1e;
+      border: 1px solid #333333;
     }
 
     .config-title {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 500;
-      color: #1f2937;
+      color: #e8eaed;
       margin-bottom: 8px;
+      transition: color 0.3s;
+    }
+
+    .dark .config-title {
+      color: #e8eaed;
     }
 
     .saved-icon {
-      color: #10b981;
+      color: #34a853;
       margin-right: 4px;
+    }
+
+    .dark .saved-icon {
+      color: #34a853;
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+      color: #9aa0a6;
+      opacity: 1;
+    }
+
+    .dark input::placeholder,
+    .dark textarea::placeholder {
+      color: #9aa0a6;
+      opacity: 1;
     }
   </style>
 </head>
 
 <body>
   <div class="header">
-    <div class="logo">SB</div>
-    <div class="title">SecondBrain</div>
+    <div class="title">Memorai</div>
     <div class="subtitle">Save and organize your tabs</div>
   </div>
 
   <div id="saveSection">
     <div class="current-tab">
-      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
         <img id="tabFavicon" class="tab-favicon" src="" alt="">
-        <div style="font-size: 12px; color: #6b7280; font-weight: 500;">Current Website</div>
+        <div style="font-size: 11px; color: #9aa0a6; font-weight: 400;" class="current-website-label">Current Website</div>
       </div>
+      <style>
+        .dark .current-website-label {
+          color: #9aa0a6;
+        }
+      </style>
 
       <div class="form-group">
         <label for="title">Website Title</label>
@@ -288,10 +455,17 @@
 
       <div class="form-group">
         <label>Category</label>
-        <div style="background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 6px; padding: 8px 12px; color: #6b7280; font-size: 14px;">
+        <div style="background: #333333; border: 1px solid #333333; border-radius: 4px; padding: 3px 6px; color: #e8eaed; font-size: 11px; font-weight: 500; display: inline-block;" class="category-badge">
           📝 Recently Added (Auto-assigned)
         </div>
       </div>
+      <style>
+        .dark .category-badge {
+          background: #333333;
+          border-color: #333333;
+          color: #e8eaed;
+        }
+      </style>
 
       <div class="form-group">
         <label for="description">Notes (Optional)</label>
@@ -313,9 +487,14 @@
   <div id="configSection" style="display: none;">
     <div class="config-section">
       <div class="config-title">Configuration Required</div>
-      <div style="font-size: 12px; color: #6b7280; margin-bottom: 12px;">
+      <div style="font-size: 11px; color: #9aa0a6; margin-bottom: 12px; font-weight: 400;" class="config-description">
         Please set your dashboard URL and your account credentials.
       </div>
+      <style>
+        .dark .config-description {
+          color: #9aa0a6;
+        }
+      </style>
 
       <div class="form-group">
         <label for="dashboardUrl">Dashboard URL</label>
@@ -347,9 +526,18 @@
 
   <div id="status" class="status" style="display: none;"></div>
 
-  <div style="text-align:center; font-size:11px; color:#6b7280; margin-top:12px;">
-    made with ❤ by Ameya Bhagat
+  <div style="text-align:center; font-size:11px; margin-top:12px; font-weight: 400;" class="footer-text">
+    made with <span style="color: #ea4335;">❤</span> by Ameya Bhagat
   </div>
+  <style>
+    .footer-text {
+      color: #9aa0a6;
+    }
+    
+    .dark .footer-text {
+      color: #9aa0a6;
+    }
+  </style>
 
   <script src="popup.js"></script>
 </body>

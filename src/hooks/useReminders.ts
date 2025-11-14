@@ -14,6 +14,8 @@ interface UseRemindersResult {
   handleOpenWebsite: () => void;
   handleCheckLater: () => void;
   handleDismissReminder: () => void;
+  getPendingReminders: () => Website[];
+  pendingRemindersCount: number;
 }
 
 export const useReminders = (websites: Website[], userId: string | undefined, onDataUpdate?: () => void): UseRemindersResult => {
@@ -21,6 +23,39 @@ export const useReminders = (websites: Website[], userId: string | undefined, on
   const [showReminder, setShowReminder] = useState(false);
   const [migrationChecked, setMigrationChecked] = useState(false);
   const [migrationExists, setMigrationExists] = useState(false);
+
+  // Get all pending reminders
+  const getPendingReminders = (): Website[] => {
+    if (!migrationExists) return [];
+    
+    const now = new Date();
+    
+    return websites.filter(website => {
+      // Skip if reminders are dismissed for this website
+      if (website.reminder_dismissed) return false;
+      
+      const createdAt = new Date(website.created_at);
+      const daysSinceCreated = differenceInDays(now, createdAt);
+      
+      // Only show reminders for websites older than the interval
+      if (daysSinceCreated < REMINDER_INTERVAL_DAYS) return false;
+      
+      // Check if we've shown a reminder recently
+      if (website.last_reminded_at) {
+        const lastReminded = new Date(website.last_reminded_at);
+        const daysSinceLastReminder = differenceInDays(now, lastReminded);
+        
+        // Don't show again if within cooldown period
+        if (daysSinceLastReminder < REMINDER_COOLDOWN_DAYS) return false;
+      }
+      
+      return true;
+    }).sort((a, b) => 
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    );
+  };
+
+  const pendingRemindersCount = getPendingReminders().length;
 
   useEffect(() => {
     if (!userId || websites.length === 0) return;
@@ -49,59 +84,9 @@ export const useReminders = (websites: Website[], userId: string | undefined, on
   };
 
   const checkForReminders = () => {
-    const now = new Date();
-    
-    console.log('Checking for reminders. Total websites:', websites.length);
-    
-    // Find websites that need reminders
-    const websitesNeedingReminders = websites.filter(website => {
-      // Skip if reminders are dismissed for this website
-      if (website.reminder_dismissed) {
-        console.log(`Skipping ${website.title}: reminders dismissed`);
-        return false;
-      }
-      
-      const createdAt = new Date(website.created_at);
-      const daysSinceCreated = differenceInDays(now, createdAt);
-      
-      // Only show reminders for websites older than the interval
-      if (daysSinceCreated < REMINDER_INTERVAL_DAYS) {
-        console.log(`Skipping ${website.title}: only ${daysSinceCreated} days old`);
-        return false;
-      }
-      
-      // Check if we've shown a reminder recently
-      if (website.last_reminded_at) {
-        const lastReminded = new Date(website.last_reminded_at);
-        const daysSinceLastReminder = differenceInDays(now, lastReminded);
-        
-        // Don't show again if within cooldown period
-        if (daysSinceLastReminder < REMINDER_COOLDOWN_DAYS) {
-          console.log(`Skipping ${website.title}: in cooldown (${daysSinceLastReminder} days since last reminder)`);
-          return false;
-        }
-      }
-      
-      console.log(`${website.title} is eligible for reminder (${daysSinceCreated} days old)`);
-      return true;
-    });
-
-    console.log('Websites needing reminders:', websitesNeedingReminders.length);
-
-    // Show reminder for the oldest website that needs it
-    if (websitesNeedingReminders.length > 0) {
-      // Sort by created_at to get the oldest first
-      websitesNeedingReminders.sort((a, b) => 
-        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-      );
-      
-      const websiteToRemind = websitesNeedingReminders[0];
-      console.log('Showing reminder for:', websiteToRemind.title);
-      setReminderWebsite(websiteToRemind);
-      setShowReminder(true);
-    } else {
-      console.log('No reminders to show');
-    }
+    // We'll keep this function for potential future use but won't auto-show reminders
+    // Reminders will now be accessed through the sidebar instead
+    console.log('Reminder system active - check sidebar for pending reminders');
   };
 
   const updateReminderTimestamp = async (websiteId: string) => {
@@ -266,6 +251,8 @@ export const useReminders = (websites: Website[], userId: string | undefined, on
     showReminder,
     handleOpenWebsite,
     handleCheckLater,
-    handleDismissReminder
+    handleDismissReminder,
+    getPendingReminders,
+    pendingRemindersCount
   };
 };

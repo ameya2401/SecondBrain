@@ -92,7 +92,7 @@ export default async function handler(req, res) {
       return;
     }
 
-    respondHtmlAutoClose(res, 200, 'Saved to SecondBrain. You can close this tab.');
+    respondHtmlAutoClose(res, 200, 'Saved to Memorai. You can close this tab.');
   } catch (err) {
     respondHtml(res, 500, `Internal Server Error: ${err?.message || err}`);
   }

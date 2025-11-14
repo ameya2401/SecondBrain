@@ -99,7 +99,7 @@ When the category sync issues are resolved, you can:
 
 ### Test Extension:
 1. Open any website
-2. Click the SecondBrain extension
+2. Click the Memorai extension
 3. Verify category shows "📝 Recently Added (Auto-assigned)"
 4. Save the website
 5. Check that it appears in dashboard under "Recently Added"

@@ -2,7 +2,7 @@
 
 ## Overview
 
-I have successfully implemented a comprehensive category management system for your SecondBrain application that enables users to manually add, reuse, and remove categories while ensuring real-time synchronization between the main UI and browser extension.
+I have successfully implemented a comprehensive category management system for your Memorai application that enables users to manually add, reuse, and remove categories while ensuring real-time synchronization between the main UI and browser extension.
 
 ## ✅ What's Been Implemented
 

@@ -1,9 +1,9 @@
-// Background script for SecondBrain extension
+// Background script for Memorai extension
 
 // Install/update listener
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
-    console.log('SecondBrain extension installed');
+    console.log('Memorai extension installed');
 
     // Set default configuration
     chrome.storage.sync.set({
@@ -16,7 +16,7 @@ chrome.runtime.onInstalled.addListener((details) => {
     chrome.notifications.create({
       type: 'basic',
       iconUrl: 'icons/icon48.png',
-      title: 'SecondBrain',
+      title: 'Memorai',
       message: 'Extension installed! Click the extension icon to get started.'
     });
   }
@@ -61,7 +61,7 @@ async function updateBadge() {
 
     if (count > 0) {
       chrome.action.setBadgeText({ text: count.toString() });
-      chrome.action.setBadgeBackgroundColor({ color: '#3b82f6' });
+      chrome.action.setBadgeBackgroundColor({ color: '#6b7280' }); // Gray color instead of blue
     } else {
       chrome.action.setBadgeText({ text: '' });
     }
