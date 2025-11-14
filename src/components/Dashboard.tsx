@@ -425,7 +425,7 @@ const Dashboard: React.FC = () => {
                 }`}>Memorai</h1>
                 <p className={`text-xs font-normal transition-colors duration-300 ${
                   isDarkMode ? 'text-[#787774]' : 'text-[#787774]'
-                }`}>Your Digital Library</p>
+                }`}>A personal archive for curated web content</p>
               </div>
             </div>
             
@@ -566,7 +566,7 @@ const Dashboard: React.FC = () => {
                 <p className={`text-sm mb-8 font-normal transition-colors duration-300 ${
                   isDarkMode ? 'text-[#787774]' : 'text-[#787774]'
                 }`}>
-                  {searchQuery ? 'Try adjusting your search terms' : 'Start building your digital library!'}
+                  {searchQuery ? 'Try adjusting your search terms' : 'Start building your personal archive!'}
                 </p>
                 {!searchQuery && (
                   <button

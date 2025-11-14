@@ -54,7 +54,7 @@ const Auth: React.FC = () => {
           }`}>Memorai</h1>
           <p className={`text-xs font-normal transition-colors duration-300 ${
             isDarkMode ? 'text-[#787774]' : 'text-[#787774]'
-          }`}>Your minimal digital library</p>
+          }`}>A personal archive for curated web content</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
